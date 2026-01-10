@@ -1,0 +1,42 @@
+# Logs
+*.log
+*.log.*
+
+# Vagrant
+.vagrant/
+
+# Ansible
+*.retry
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.idea/
+.vscode/
+*.sublime-*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Secrets and credentials (be careful with these)
+*.pem
+*.key
+settings.toml
+
+# Docker volumes/data
+data/
+volumes/
