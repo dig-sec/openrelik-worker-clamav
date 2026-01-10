@@ -1,0 +1,295 @@
+WIREGUARD VPN INTEGRATION - INSTALLATION COMPLETE
+===================================================
+
+STATUS: ✅ Complete and Ready to Use
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+WHAT WAS INTEGRATED:
+
+12 Mullvad WireGuard endpoint configurations for Swedish servers
+(Malmo - MMA region). Lab traffic routes through VPN automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+FILES CREATED:
+
+✅ wireguard/se-mma-wg-001.conf        → 193.138.218.220:51820
+✅ wireguard/se-mma-wg-002.conf        → 193.138.218.80:51820
+✅ wireguard/se-mma-wg-003.conf        → 193.138.218.83:51820
+✅ wireguard/se-mma-wg-004.conf        → 193.138.218.130:51820
+✅ wireguard/se-mma-wg-005.conf        → 193.138.218.82:51820
+✅ wireguard/se-mma-wg-011.conf        → 141.98.255.94:51820
+✅ wireguard/se-mma-wg-012.conf        → 141.98.255.97:51820
+✅ wireguard/se-mma-wg-101.conf        → 45.83.220.68:51820
+✅ wireguard/se-mma-wg-102.conf        → 45.83.220.69:51820
+✅ wireguard/se-mma-wg-103.conf        → 45.83.220.70:51820
+✅ wireguard/se-mma-wg-111.conf        → 45.129.59.19:51820
+✅ wireguard/se-mma-wg-112.conf        → 45.129.59.129:51820
+
+✅ scripts/wg-config.sh (executable)
+   - Configuration management script
+   - Select, list, test, rotate endpoints
+   - Backup and restore functionality
+
+✅ wireguard/README.md
+   - WireGuard configuration details
+   - Account information
+   - Endpoint specifications
+
+✅ docs/WIREGUARD-SETUP.md
+   - Integration guide
+   - Usage examples
+   - Troubleshooting
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+QUICK START:
+
+1. List available endpoints:
+   $ ./scripts/wg-config.sh list
+
+2. Select an endpoint:
+   $ ./scripts/wg-config.sh select se-mma-wg-001
+
+3. Provision lab with VPN:
+   $ ./scripts/provision.sh
+
+4. Verify connectivity:
+   $ ./scripts/wg-config.sh test
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+AVAILABLE ENDPOINTS:
+
+PRIMARY ENDPOINTS (193.138.218.x):
+  se-mma-wg-001  193.138.218.220:51820
+  se-mma-wg-002  193.138.218.80:51820
+  se-mma-wg-003  193.138.218.83:51820
+  se-mma-wg-004  193.138.218.130:51820
+  se-mma-wg-005  193.138.218.82:51820
+
+ALTERNATE ENDPOINTS (141.98.255.x):
+  se-mma-wg-011  141.98.255.94:51820
+  se-mma-wg-012  141.98.255.97:51820
+
+CLOUD ENDPOINTS (45.83.220.x):
+  se-mma-wg-101  45.83.220.68:51820
+  se-mma-wg-102  45.83.220.69:51820
+  se-mma-wg-103  45.83.220.70:51820
+
+DATA CENTER ENDPOINTS (45.129.59.x):
+  se-mma-wg-111  45.129.59.19:51820
+  se-mma-wg-112  45.129.59.129:51820
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+HOW IT WORKS:
+
+User selects endpoint
+        ↓
+./scripts/wg-config.sh select se-mma-wg-001
+        ↓
+Config stored in: wireguard/active-wg0.conf
+        ↓
+./scripts/provision.sh runs
+        ↓
+Firewall playbook reads active-wg0.conf
+        ↓
+WireGuard interface (wg0) created on firewall VM
+        ↓
+Lab network (10.20.0.0/24) routes through Mullvad
+        ↓
+All traffic exits through Swedish VPN endpoint
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+SECURITY LAYERS:
+
+1. Lab Network Isolation (10.20.0.0/24)
+2. WireGuard Encryption (XChaCha20 + Poly1305)
+3. Mullvad VPN Anonymity (Swedish exit IP)
+4. Optional Tor Browser (Neko) for additional anonymity
+5. Suricata IDS monitoring all traffic
+
+═════════════════════════════════════════════════════════════════════
+
+COMMON COMMANDS:
+
+List endpoints:
+  ./scripts/wg-config.sh list
+
+Select endpoint:
+  ./scripts/wg-config.sh select se-mma-wg-001
+
+Show current:
+  ./scripts/wg-config.sh current
+
+Get config info:
+  ./scripts/wg-config.sh info se-mma-wg-001
+
+Rotate randomly:
+  ./scripts/wg-config.sh rotate
+
+Test connectivity:
+  ./scripts/wg-config.sh test
+
+Backup config:
+  ./scripts/wg-config.sh backup
+
+Restore config:
+  ./scripts/wg-config.sh restore
+
+Provision with VPN:
+  ./scripts/provision.sh
+
+Check exit IP:
+  vagrant ssh firewall
+  curl https://api.mullvad.net/ip
+
+═════════════════════════════════════════════════════════════════════
+
+INTEGRATION WITH UTGARD LAB:
+
+┌──────────────────────────────────────────┐
+│ Neko Tor Browser / OpenRelik / REMnux   │
+└────────────────┬─────────────────────────┘
+                 │ Lab Network
+                 ↓
+        ┌────────────────┐
+        │ Firewall (GW)  │
+        │ 10.20.0.1      │
+        └────────┬───────┘
+                 │ WireGuard (wg0)
+                 ↓
+        ┌────────────────────┐
+        │ Mullvad VPN Tunnel │
+        │ Sweden Endpoint    │
+        └────────┬───────────┘
+                 │
+                 ↓
+            Internet
+        (Swedish exit IP)
+```
+
+═════════════════════════════════════════════════════════════════════
+
+MULLVAD ACCOUNT:
+
+Device Name: Famous Wasp
+Private Key: UCBE7Gw5ljpNg5nApRkoJIT8o32YXpTHJR7DN983QkY=
+VPN Network IP: 10.66.31.54 (IPv4)
+               fc00:bbbb:bbbb:bb01::3:1f35 (IPv6)
+DNS: 10.64.0.1 (Mullvad DNS)
+Region: Sweden (Malmo)
+
+═════════════════════════════════════════════════════════════════════
+
+FEATURES:
+
+✓ 12 Swedish VPN endpoints for redundancy
+✓ Easy endpoint selection and switching
+✓ Automatic rotation for load balancing
+✓ Configuration backup/restore
+✓ Health checks and connectivity testing
+✓ Integrated with firewall provisioning
+✓ Works with existing Utgard lab
+✓ IPv4 and IPv6 support
+✓ Mullvad DNS included
+
+═════════════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+Issue: Can't connect to VPN
+Solution: vagrant ssh firewall && sudo wg show wg0
+
+Issue: WireGuard interface not up
+Solution: Check endpoint IP: nc -zu -w 2 193.138.218.220 51820
+
+Issue: Need to switch endpoints
+Solution: ./scripts/wg-config.sh select se-mma-wg-002
+
+Issue: Check exit IP
+Solution: vagrant ssh firewall && curl https://api.mullvad.net/ip
+
+See docs/WIREGUARD-SETUP.md for full troubleshooting guide.
+
+═════════════════════════════════════════════════════════════════════
+
+DOCUMENTATION:
+
+Complete Guide:
+  → docs/WIREGUARD-SETUP.md
+
+Configuration Details:
+  → wireguard/README.md
+
+Script Help:
+  → ./scripts/wg-config.sh help
+
+═════════════════════════════════════════════════════════════════════
+
+NEXT STEPS:
+
+1. Review available endpoints:
+   ./scripts/wg-config.sh list
+
+2. Select preferred endpoint:
+   ./scripts/wg-config.sh select se-mma-wg-001
+
+3. Provision lab with VPN:
+   ./scripts/provision.sh
+
+4. Verify VPN is active:
+   ./scripts/wg-config.sh test
+
+5. Check exit IP:
+   vagrant ssh firewall
+   curl https://api.mullvad.net/ip
+
+═════════════════════════════════════════════════════════════════════
+
+INTEGRATION WITH NEKO:
+
+Neko Tor Browser now has dual VPN protection:
+
+User → Neko Tor Browser (WebRTC)
+     ↓
+  Lab Network
+     ↓
+  WireGuard VPN (Mullvad, Sweden)
+     ↓
+  Tor Network (entry guard)
+     ↓
+  .onion Sites
+
+This provides:
+- VPN anonymity from ISP
+- Tor anonymity from Mullvad
+- Lab traffic isolation
+- Full traffic monitoring on firewall
+
+═════════════════════════════════════════════════════════════════════
+
+REFERENCES:
+
+WireGuard: https://www.wireguard.com/
+Mullvad: https://mullvad.net/
+WireGuard Protocol: https://www.wireguard.com/protocol/
+Mullvad API: https://api.mullvad.net/
+
+═════════════════════════════════════════════════════════════════════
+
+STATUS: ✅ FULLY INTEGRATED AND READY
+
+Date: January 9, 2026
+Total Endpoints: 12
+Region: Sweden (Malmo)
+Provider: Mullvad VPN
+Protocol: WireGuard
+
+All configurations tested and verified.
+Ready for immediate use with Utgard lab.
+
+═════════════════════════════════════════════════════════════════════

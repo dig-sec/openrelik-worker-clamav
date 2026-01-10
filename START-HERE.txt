@@ -1,0 +1,40 @@
+UTGARD LAB - QUICK START
+========================
+
+1) Provision the lab (first run takes ~15-25 minutes):
+   ./scripts/provision.sh
+
+2) Test connectivity:
+   ./scripts/test-connections.sh
+
+3) Access services:
+   - Landing Page:     http://localhost/          (main hub with links to all services)
+   - OpenRelik UI:     http://localhost:8711/     (forensic analysis platform)
+   - OpenRelik API:    http://localhost:8710/api/v1/docs/
+   - Guacamole:        http://localhost:18080/guacamole/
+
+NOTES
+-----
+- Mullvad is optional. Without it, lab traffic egresses via the firewall's public
+  interface (not recommended for malware detonation).
+- Default credentials:
+  - Guacamole: guacadmin / guacadmin (change after first login)
+  - OpenRelik (local auth): admin / admin
+
+TROUBLESHOOTING
+---------------
+- Check status: ./scripts/check-status.sh
+- Start only:  ./scripts/start-lab.sh
+- VMs state:   vagrant status
+
+PROJECT MAP
+-----------
+- README.md                  Full setup and troubleshooting guide
+- docs/COMPONENTS.md         Component map (firewall, OpenRelik, REMnux, Mullvad, Neko)
+- docs/GUACAMOLE-SETUP.md    Guacamole connection setup
+- docs/neko/                 Neko Tor Browser docs and summaries
+- Vagrantfile                VM definitions and networking
+- network.xml                libvirt network definition
+- provision/                 Ansible playbooks (firewall/openrelik/remnux)
+- scripts/                   Provisioning and verification scripts
+- services/index.html        Landing page (served at http://localhost/)

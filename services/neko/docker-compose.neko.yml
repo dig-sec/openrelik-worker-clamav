@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  neko-tor:
+    image: ghcr.io/m1k1o/neko/tor-browser:latest
+    container_name: neko-tor-browser
+    restart: unless-stopped
+    shm_size: 2gb
+    ports:
+      - "8080:8080"   # Neko Web UI
+      - "8081:8081"   # WebRTC broadcast port
+    environment:
+      # Display resolution
+      - NEKO_SCREEN=1920x1080
+      # Access credentials
+      - NEKO_PASSWORD=neko
+      - NEKO_PASSWORD_ADMIN=admin
+      # Binding configuration
+      - NEKO_BIND=0.0.0.0:8080
+      - NEKO_BROADCAST=0.0.0.0:8081
+      # Network settings
+      - NEKO_NAT=1
+      - NEKO_EPR=50000-50100
+      # Tor specific settings
+      - NEKO_LOGS=false
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forwarding=1
+    volumes:
+      - neko_data:/home/neko
+    networks:
+      - neko-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  neko_data:
+    driver: local
+
+networks:
+  neko-network:
+    driver: bridge

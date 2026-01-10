@@ -1,0 +1,186 @@
+---
+- name: Install and configure OpenRelik
+  hosts: all
+  become: yes
+  vars:
+    openrelik_install_dir: "/opt/openrelik"
+    openrelik_user: "vagrant"
+    
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Create keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Add Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      shell: |
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+      args:
+        creates: /etc/apt/sources.list.d/docker.list
+
+    - name: Update apt cache after adding Docker repo
+      apt:
+        update_cache: yes
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add vagrant user to docker group
+      user:
+        name: "{{ openrelik_user }}"
+        groups: docker
+        append: yes
+
+    - name: Create OpenRelik installation directory
+      file:
+        path: "{{ openrelik_install_dir }}"
+        state: directory
+        owner: "{{ openrelik_user }}"
+        group: "{{ openrelik_user }}"
+        mode: '0755'
+
+    - name: Download OpenRelik install script
+      get_url:
+        url: https://raw.githubusercontent.com/openrelik/openrelik-deploy/main/docker/install.sh
+        dest: "{{ openrelik_install_dir }}/install.sh"
+        mode: '0755'
+        owner: "{{ openrelik_user }}"
+        group: "{{ openrelik_user }}"
+
+    - name: Run OpenRelik install script
+      shell: bash install.sh
+      args:
+        chdir: "{{ openrelik_install_dir }}"
+        creates: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+      become_user: "{{ openrelik_user }}"
+
+    - name: Ensure OpenRelik config directory exists
+      file:
+        path: "{{ openrelik_install_dir }}/openrelik/config"
+        state: directory
+        owner: "{{ openrelik_user }}"
+        group: "{{ openrelik_user }}"
+        mode: '0755'
+
+    - name: Write settings.toml from provided variables
+      copy:
+        dest: "{{ openrelik_install_dir }}/openrelik/config/settings.toml"
+        owner: "{{ openrelik_user }}"
+        group: "{{ openrelik_user }}"
+        mode: '0644'
+        content: |
+          [oauth]
+          client_id = "{{ openrelik_client_id | default('') }}"
+          client_secret = "{{ openrelik_client_secret | default('') }}"
+
+          [access]
+          allowlist = {{ (openrelik_allowlist | default([])) | to_nice_json }}
+      when: (openrelik_client_id | default('')) != '' and (openrelik_client_secret | default('')) != ''
+
+    - name: Check if settings.toml exists
+      stat:
+        path: "{{ openrelik_install_dir }}/openrelik/config/settings.toml"
+      register: settings_file
+
+    - name: Display OAuth configuration instructions
+      debug:
+        msg:
+          - "================================================"
+          - "OpenRelik has been installed successfully!"
+          - "================================================"
+          - "NEXT STEPS:"
+          - "1. Configure Google OAuth credentials:"
+          - "   - Edit {{ openrelik_install_dir }}/openrelik/config/settings.toml"
+          - "   - Add your OAuth client_id and client_secret"
+          - "   - Add your email to the allowlist"
+          - ""
+          - "2. Start OpenRelik:"
+          - "   cd {{ openrelik_install_dir }}/openrelik"
+          - "   docker compose up -d"
+          - ""
+          - "3. Access the UI at: http://localhost:8711/"
+          - "   API docs at: http://localhost:8710/api/v1/docs/"
+          - "================================================"
+      when: settings_file.stat.exists
+
+    - name: Create helper script to start OpenRelik
+      copy:
+        dest: /usr/local/bin/openrelik-start
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          cd {{ openrelik_install_dir }}/openrelik
+          docker compose up -d
+          echo "OpenRelik started!"
+          echo "UI: http://localhost:8711/"
+          echo "API: http://localhost:8710/api/v1/docs/"
+
+    - name: Start OpenRelik now (if configured)
+      shell: docker compose up -d
+      args:
+        chdir: "{{ openrelik_install_dir }}/openrelik"
+      when: settings_file.stat.exists and (openrelik_client_id | default('')) != '' and (openrelik_client_secret | default('')) != ''
+
+    - name: Create helper script to stop OpenRelik
+      copy:
+        dest: /usr/local/bin/openrelik-stop
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          cd {{ openrelik_install_dir }}/openrelik
+          docker compose down
+          echo "OpenRelik stopped!"
+
+    - name: Create helper script to view logs
+      copy:
+        dest: /usr/local/bin/openrelik-logs
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          cd {{ openrelik_install_dir }}/openrelik
+          docker compose logs -f
+
+    - name: Display final instructions
+      debug:
+        msg:
+          - "================================================"
+          - "Helpful commands:"
+          - "  openrelik-start - Start OpenRelik services"
+          - "  openrelik-stop  - Stop OpenRelik services"
+          - "  openrelik-logs  - View OpenRelik logs"
+          - "================================================"

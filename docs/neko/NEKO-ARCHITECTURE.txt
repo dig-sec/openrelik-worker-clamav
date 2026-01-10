@@ -1,0 +1,298 @@
+╔════════════════════════════════════════════════════════════════════════════════╗
+║                    UTGARD LAB - NEKO TOR BROWSER INTEGRATION                    ║
+╚════════════════════════════════════════════════════════════════════════════════╝
+
+NETWORK TOPOLOGY
+════════════════════════════════════════════════════════════════════════════════
+
+                           ┌──────────────────────────┐
+                           │   Host System (Linux)    │
+                           │  localhost:8080 ↔ 8080   │
+                           │  localhost:8081 ↔ 8081   │
+                           └──────────────┬───────────┘
+                                          │
+                    ┌─────────────────────┼─────────────────────┐
+                    │                     │                     │
+        ┌───────────▼──────────┐ ┌───────▼────────────┐ ┌──────▼──────────┐
+        │  Firewall VM         │ │  OpenRelik VM      │ │  REMnux VM      │
+        │  10.20.0.1           │ │  10.20.0.30        │ │  10.20.0.20     │
+        │  ─────────────────── │ │  ─────────────────  │ │  ─────────────  │
+        │ • Mullvad VPN        │ │ • OpenRelik API    │ │ • YARA          │
+        │ • nftables firewall  │ │ • WebUI            │ │ • Volatility    │
+        │ • Suricata IDS       │ │ • Artifact Storage │ │ • Sandbox       │
+        │ • tcpdump (pcap)     │ │                    │ │ • Analysis Tools│
+        └───────────┬──────────┘ └────────┬───────────┘ └─────────────────┘
+                    │                     │
+                    │     Utgard Lab Network: 10.20.0.0/24
+                    │     (NAT: eth0 public, eth1 lab internal)
+                    │
+        ┌───────────▼──────────────────────────────────────────────────┐
+        │                                                              │
+        │     ┌──────────────────────────────────────────┐             │
+        │     │         ✨ NEKO TOR BROWSER VM ✨       │             │
+        │     │            10.20.0.40 (NEW)             │             │
+        │     ├──────────────────────────────────────────┤             │
+        │     │ Resources:                               │             │
+        │     │ • RAM: 3072 MB                           │             │
+        │     │ • CPU: 2 cores                           │             │
+        │     │                                          │             │
+        │     │ Services:                                │             │
+        │     │ ┌───────────────────────────────────┐   │             │
+        │     │ │   Docker Container                │   │             │
+        │     │ │ ┌──────────────────────────────┐  │   │             │
+        │     │ │ │  Tor Browser (Latest)        │  │   │             │
+        │     │ │ │  • 1920x1080 display         │  │   │             │
+        │     │ │ │  • Full Tor network access   │  │   │             │
+        │     │ │ │  • .onion site support       │  │   │             │
+        │     │ │ │  • Persistent /home/neko     │  │   │             │
+        │     │ │ └──────────────────────────────┘  │   │             │
+        │     │ │                                    │   │             │
+        │     │ │ Systemd Service: neko             │   │             │
+        │     │ │ Port 8080: WebRTC Web UI          │   │             │
+        │     │ │ Port 8081: Broadcast stream       │   │             │
+        │     │ └───────────────────────────────────┘   │             │
+        │     │                                          │             │
+        │     │ Credentials (default):                   │             │
+        │     │ User: neko                               │             │
+        │     │ Admin: admin                             │             │
+        │     │ (Customizable via env variables)         │             │
+        │     └──────────────────────────────────────────┘             │
+        │                                                              │
+        └──────────────────────────────────────────────────────────────┘
+
+
+ACCESS PATHS
+════════════════════════════════════════════════════════════════════════════════
+
+1. DIRECT ACCESS
+   ├─ URL: http://localhost:8080
+   ├─ Protocol: WebRTC (low-latency video)
+   ├─ Auth: neko / admin
+   └─ Use case: Direct browser control
+
+2. VIA GUACAMOLE GATEWAY (after configuration)
+   ├─ URL: http://localhost:18080/guacamole/
+   ├─ Connection: "Neko Tor Browser"
+   ├─ Protocol: HTTP proxy
+   └─ Use case: Web gateway access
+
+3. INTERNAL LAB ACCESS
+   ├─ From Firewall: curl http://10.20.0.40:8080
+   ├─ From OpenRelik: curl http://10.20.0.40:8080
+   ├─ From REMnux: curl http://10.20.0.40:8080
+   └─ Use case: Lab-wide browser automation
+
+
+DATA FLOW
+════════════════════════════════════════════════════════════════════════════════
+
+┌──────────────────┐
+│  User Browser    │
+│  localhost:8080  │
+└────────┬─────────┘
+         │ WebRTC (H.264 video, audio, control)
+         ▼
+┌──────────────────────────────────┐
+│  Host Port 8080 ←────────────────┤ Forward to Guest
+└────────┬─────────────────────────┘
+         │ Vagrant Port Mapping
+         ▼
+┌──────────────────────────────────┐
+│  Neko VM Port 8080               │
+│  Systemd Service: neko           │
+└────────┬─────────────────────────┘
+         │ Docker Compose
+         ▼
+┌──────────────────────────────────┐
+│  Docker Container                │
+│  neko-tor-browser                │
+│  Image: ghcr.io/m1k1o/neko/...  │
+└────────┬─────────────────────────┘
+         │ X11 / Display Server
+         ▼
+┌──────────────────────────────────┐
+│  Tor Browser Application         │
+│  Running on :1 display           │
+└────────┬─────────────────────────┘
+         │ Tor SOCKS5 Proxy (:9050)
+         ▼
+┌──────────────────────────────────┐
+│  Tor Network                     │
+│  .onion sites accessible         │
+└──────────────────────────────────┘
+
+┌──────────────────────────────────┐
+│  All Traffic (10.20.0.40)        │
+│  ↓                               │
+│  Firewall IDS (Suricata)         │
+│  ↓                               │
+│  Packet Capture (tcpdump)        │
+│  ↓                               │
+│  OpenRelik / REMnux Analysis     │
+└──────────────────────────────────┘
+
+
+FILES & STRUCTURE
+════════════════════════════════════════════════════════════════════════════════
+
+utgard/
+├── provision/
+│   └── neko.yml                    ← Ansible playbook for neko
+├── scripts/
+│   ├── configure-neko-guacamole.sh ← Setup neko in Guacamole
+│   ├── test-connections.sh         ← UPDATED: neko tests
+│   └── [other scripts]
+├── docs/
+│   └── neko/
+│       ├── NEKO-SETUP.md           ← Full integration guide (500+ lines)
+│       ├── NEKO-README.md          ← Quick overview
+│       ├── NEKO-INTEGRATION.md     ← Summary of all changes
+│       ├── NEKO-ARCHITECTURE.txt   ← This architecture view
+│       └── NEKO-SUMMARY.txt        ← File manifest
+├── services/
+│   └── neko/
+│       └── docker-compose.neko.yml ← Standalone docker-compose
+├── scripts/NEKO-QUICKREF.sh        ← Command cheatsheet
+├── Vagrantfile                     ← UPDATED: neko VM definition
+└── [other files]
+
+
+QUICK START
+════════════════════════════════════════════════════════════════════════════════
+
+1. PROVISION
+   $ ./scripts/provision.sh
+   (Creates all VMs including neko)
+
+2. VERIFY
+   $ ./scripts/test-connections.sh
+   (Tests neko connectivity)
+
+3. ACCESS
+   Open in browser: http://localhost:8080
+   Login: neko / admin
+
+4. BROWSE
+   • Access any .onion site
+   • All traffic visible on firewall
+   • Multi-user collaboration supported
+
+
+ENVIRONMENT VARIABLES (Optional)
+════════════════════════════════════════════════════════════════════════════════
+
+Before running ./scripts/provision.sh:
+
+export NEKO_PASSWORD="custom-password"          # User login
+export NEKO_ADMIN_PASSWORD="custom-admin-pass"  # Admin login
+
+Default: neko / admin
+
+
+INTEGRATION CHECKLIST
+════════════════════════════════════════════════════════════════════════════════
+
+✅ Ansible playbook created          (provision/neko.yml)
+✅ Vagrantfile updated               (neko VM block added)
+✅ Docker configuration created      (services/neko/docker-compose.neko.yml)
+✅ Test script updated              (test-connections.sh)
+✅ Guacamole configuration created  (configure-neko-guacamole.sh)
+✅ Documentation created             (4 docs files)
+✅ Quick reference created           (scripts/NEKO-QUICKREF.sh)
+✅ Backward compatible               (no breaking changes)
+✅ Tested with current setup        (ready to use)
+
+
+KEY FEATURES
+════════════════════════════════════════════════════════════════════════════════
+
+🔒 SECURITY
+   • Container isolation from host
+   • Lab network isolation (10.20.0.0/24)
+   • Traffic captured for analysis
+   • Persistent privacy (no data on host)
+   • VPN + Tor stacking (if Mullvad configured)
+
+🌐 TOR CAPABILITIES
+   • Full Tor Browser access
+   • .onion site browsing
+   • Tor network analysis
+   • Anonymous research environment
+
+👥 COLLABORATION
+   • Multi-user simultaneous access
+   • Admin controls & logging
+   • WebRTC low-latency streaming
+   • Browser state persistence
+
+📊 ANALYSIS
+   • IDS monitoring (Suricata)
+   • Packet capture (tcpdump)
+   • OpenRelik integration
+   • REMnux analysis tools
+
+
+SUPPORT & DOCUMENTATION
+════════════════════════════════════════════════════════════════════════════════
+
+📖 Full Guide:
+   $ cat docs/neko/NEKO-SETUP.md
+
+⚡ Quick Reference:
+   $ cat scripts/NEKO-QUICKREF.sh
+
+🔧 Troubleshooting:
+   $ cat docs/neko/NEKO-SETUP.md | grep -A 20 "Troubleshooting"
+
+🌐 Neko Project:
+   https://github.com/m1k1o/neko
+   https://neko.m1k1o.net/
+
+🧅 Tor Project:
+   https://www.torproject.org/
+
+
+RESOURCES
+════════════════════════════════════════════════════════════════════════════════
+
+VM Resources:
+   CPU: 2 cores
+   RAM: 3072 MB
+   Disk: ~30 GB (shared)
+   Network: 10.20.0.40/24
+
+Container Resources:
+   RAM: ~1.5 GB (running)
+   Disk: ~2 GB (image + data)
+   Shared Memory: 2 GB (X11)
+
+
+MAINTENANCE
+════════════════════════════════════════════════════════════════════════════════
+
+Update Neko image:
+   vagrant ssh neko
+   sudo docker pull ghcr.io/m1k1o/neko/tor-browser:latest
+   sudo systemctl restart neko
+
+Check health:
+   ./scripts/test-connections.sh
+
+Monitor resources:
+   vagrant ssh neko
+   sudo docker stats neko-tor-browser
+
+View logs:
+   vagrant ssh neko
+   sudo journalctl -u neko -f
+
+
+═════════════════════════════════════════════════════════════════════════════════
+
+Status: ✅ FULLY INTEGRATED AND READY FOR USE
+
+Last Updated: January 9, 2026
+Neko Version: Latest (auto-pulled from ghcr.io)
+Integration: Complete (8 files created/modified)
+
+═════════════════════════════════════════════════════════════════════════════════
