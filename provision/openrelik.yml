@@ -9,7 +9,38 @@
     openrelik_client_secret: ""
     openrelik_allowlist: []
     lab_gateway: "10.20.0.1"
+    lab_ip: "10.20.0.30"
+    enable_extra_workers: false
+    ghcr_username: ""
+    ghcr_token: ""
   tasks:
+    - name: Configure lab interface (eth1) with static address
+      copy:
+        dest: /etc/netplan/60-utgard.yaml
+        mode: '0644'
+        content: |
+          network:
+            version: 2
+            renderer: networkd
+            ethernets:
+              eth1:
+                dhcp4: false
+                dhcp6: false
+                addresses: [{{ lab_ip }}/24]
+                gateway4: {{ lab_gateway }}
+                nameservers:
+                  addresses: [{{ lab_gateway }}]
+      register: lab_netplan
+
+    - name: Apply netplan if lab interface config changed
+      when: lab_netplan.changed
+      command: netplan apply
+
+    - name: Ensure lab interface is up
+      when: lab_netplan.changed
+      command: ip link set eth1 up
+      changed_when: false
+
     - name: Set default gateway to firewall (lab network only route)
       shell: |
         ip route del default || true
@@ -185,6 +216,47 @@
           cd {{ openrelik_install_dir }}/openrelik
           docker compose logs -f
 
+    - name: Login to GHCR (if credentials provided)
+      when: (ghcr_username | default('')) != '' and (ghcr_token | default('')) != ''
+      shell: echo "{{ ghcr_token }}" | docker login ghcr.io -u "{{ ghcr_username }}" --password-stdin
+
+    - name: Disable GHCR-dependent workers when extra workers are not enabled
+      when: not (enable_extra_workers | bool)
+      shell: |
+        python3 << 'EOF'
+        import yaml
+        compose_file = "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+        with open(compose_file, 'r') as f:
+            compose = yaml.safe_load(f)
+        services = compose.get('services', {})
+        workers = [
+            'openrelik-worker-yara',
+            'openrelik-worker-hayabusa',
+            'openrelik-worker-capa',
+            'openrelik-worker-strings',
+            'openrelik-worker-entropy',
+            'openrelik-worker-eztools',
+            'openrelik-worker-exif',
+            'openrelik-worker-regripper',
+            'openrelik-worker-ssdeep',
+            'openrelik-worker-eml',
+        'openrelik-worker-clamav',
+        'openrelik-worker-grep',
+        'openrelik-worker-plaso',
+        'openrelik-worker-extraction',
+        'openrelik-worker-analyzer-config'
+        ]
+        removed = []
+        for w in workers:
+            if w in services:
+                services.pop(w)
+                removed.append(w)
+        compose['services'] = services
+        with open(compose_file, 'w') as f:
+            yaml.dump(compose, f, default_flow_style=False, sort_keys=False)
+        print("Removed workers:", ', '.join(removed))
+        EOF
+
     - name: Start OpenRelik (with or without OAuth config)
       shell: docker compose up -d
       args:
@@ -235,7 +307,8 @@
       args:
         chdir: "{{ openrelik_install_dir }}/openrelik"
 
-    - name: Add OpenRelik workers (Yara, Hayabusa, Capa, Strings, and Entropy) to docker-compose.yml
+    - name: Add OpenRelik workers (Yara, Hayabusa, Capa, Strings, Entropy, etc.) to docker-compose.yml
+      when: enable_extra_workers | bool
       shell: |
         docker_compose_file="{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
         

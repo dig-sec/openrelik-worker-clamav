@@ -118,7 +118,16 @@ else
 fi
 
 echo -n "Testing Neko Web UI (8080)... "
-if timeout $TIMEOUT curl -s "http://localhost:8080/" > /dev/null 2>&1; then
+if timeout $TIMEOUT curl -s -f "http://localhost:8080/" > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ PASS${NC}"
+    ((PASSED++))
+else
+    echo -e "${RED}✗ FAIL${NC}"
+    ((FAILED++))
+fi
+
+echo -n "Testing Neko Chromium UI (8090)... "
+if timeout $TIMEOUT curl -s -f "http://localhost:8090/" > /dev/null 2>&1; then
     echo -e "${GREEN}✓ PASS${NC}"
     ((PASSED++))
 else

@@ -29,6 +29,8 @@ Vagrant.configure("2") do |config|
     fw.vm.network "forwarded_port", guest: 8710, host: 8710  # OpenRelik API
     fw.vm.network "forwarded_port", guest: 8711, host: 8711  # OpenRelik UI
     fw.vm.network "forwarded_port", guest: 18080, host: 18080  # Guacamole (via nginx)
+    fw.vm.network "forwarded_port", guest: 8080, host: 8080  # Neko UI (via nginx)
+    fw.vm.network "forwarded_port", guest: 8090, host: 8090  # Neko Chromium UI (via nginx)
 
     # Copy firewall playbook and run it
     fw.vm.provision "file", source: "provision/firewall.yml", destination: "/tmp/firewall.yml"
@@ -42,7 +44,8 @@ Vagrant.configure("2") do |config|
         lab_network: '10.20.0.0/24',
         lab_gateway_ip: '10.20.0.1',
         openrelik_ip: '10.20.0.30',
-        remnux_ip: '10.20.0.20'
+        remnux_ip: '10.20.0.20',
+        neko_ip: '10.20.0.40'
       }
     end
   end
@@ -128,9 +131,9 @@ Vagrant.configure("2") do |config|
       libvirt__dhcp_enabled: false,
       auto_config: true
 
-    # Forward neko ports to host
-    nk.vm.network "forwarded_port", guest: 8080, host: 8080  # Neko Web UI
-    nk.vm.network "forwarded_port", guest: 8081, host: 8081  # Neko WebRTC broadcast
+    # Forward neko broadcast port to host (WebRTC)
+    nk.vm.network "forwarded_port", guest: 8081, host: 8081  # Neko Tor WebRTC broadcast
+    nk.vm.network "forwarded_port", guest: 8091, host: 8091  # Neko Chromium WebRTC broadcast
 
     # Copy neko playbook and run it
     nk.vm.provision "file", source: "provision/neko.yml", destination: "/tmp/neko.yml"

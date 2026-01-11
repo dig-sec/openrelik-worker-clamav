@@ -158,6 +158,7 @@
             transition: all 0.3s ease;
             border: 2px solid #667eea;
             margin: 10px 5px 10px 0;
+            cursor: pointer;
         }
         
         .button-primary:hover {
@@ -176,6 +177,7 @@
             transition: all 0.3s ease;
             border: 2px solid #667eea;
             margin: 10px 5px 10px 0;
+            cursor: pointer;
         }
         
         .button-secondary:hover {
@@ -278,6 +280,12 @@
             font-size: 1.2em;
             margin-bottom: 10px;
         }
+
+        .rebuild-note {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 10px;
+        }
         
         @media (max-width: 768px) {
             header h1 {
@@ -328,6 +336,8 @@
             <a href="http://localhost:8711/" class="button-primary">🚀 Launch OpenRelik UI</a>
             <a href="http://localhost:8710/api/v1/docs/" class="button-secondary">📚 API Documentation</a>
             <a href="http://localhost:18080/guacamole/" class="button-secondary">🖥️ Remote Desktop (Guacamole)</a>
+            <a href="http://localhost:8080/" class="button-secondary">🧭 Open Neko Tor Browser</a>
+            <button class="button-secondary" type="button" onclick="copyNekoRebuild()">♻️ Copy Neko Rebuild Command</button>
         </div>
         
         <div class="sections">
@@ -343,6 +353,8 @@
                             <small>REST API for programmatic access to workers and artifacts</small></li>
                         <li><a href="http://localhost:18080/guacamole/">Guacamole Gateway</a><br>
                             <small>Remote desktop access to analyst workstations (RDP)</small></li>
+                        <li><a href="http://localhost:8080/">Neko Tor Browser</a><br>
+                            <small>Isolated Tor Browser session for sensitive research</small></li>
                     </ul>
                 </div>
             </div>
@@ -461,6 +473,20 @@
                     </ul>
                 </div>
             </div>
+
+            <!-- Neko Tor Browser Section -->
+            <div class="section">
+                <div class="section-header">🧭 Neko Tor Browser</div>
+                <div class="section-content">
+                    <p>Launch a shared, isolated Tor Browser session for analysis or threat intel work.</p>
+                    <ul class="links">
+                        <li><a href="http://localhost:8080/">Open Neko UI</a><br>
+                            <small>Login with the default credentials if you have not changed them.</small></li>
+                    </ul>
+                    <button class="button-secondary" type="button" onclick="copyNekoRebuild()">Copy rebuild command</button>
+                    <div class="rebuild-note">Rebuild command: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">vagrant destroy -f neko && vagrant up neko</code></div>
+                </div>
+            </div>
             
             <!-- Getting Started Section -->
             <div class="section">
@@ -491,6 +517,9 @@
             <div class="credential-item">
                 <span class="credential-label">Guacamole:</span> guacadmin / guacadmin
             </div>
+            <div class="credential-item">
+                <span class="credential-label">Neko:</span> neko / admin
+            </div>
             <p style="margin-top: 15px; color: #856404; font-size: 0.9em;">
                 ⚠️ <strong>Important:</strong> Change default passwords immediately after first login. These are provided only for initial setup.
             </p>
@@ -510,5 +539,19 @@
             </p>
         </footer>
     </div>
+    <script>
+        function copyNekoRebuild() {
+            var command = "vagrant destroy -f neko && vagrant up neko";
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(command).then(function () {
+                    alert("Neko rebuild command copied to clipboard.");
+                }, function () {
+                    window.prompt("Copy the command:", command);
+                });
+                return;
+            }
+            window.prompt("Copy the command:", command);
+        }
+    </script>
 </body>
 </html>

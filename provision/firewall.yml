@@ -118,6 +118,11 @@
           - "Set MULLVAD_WG_CONF environment variable and reprovision."
       when: wg0_conf | length == 0
 
+    - name: Check if WireGuard config exists
+      stat:
+        path: /etc/wireguard/wg0.conf
+      register: wg_conf_stat
+
     - name: Configure nftables for multi-homed firewall
       copy:
         dest: /etc/nftables.conf
@@ -155,7 +160,7 @@
               ip saddr {{ lab_network }} udp dport 53 log prefix "LAB_DNS: " level info
               ip saddr {{ lab_network }} tcp dport 53 log prefix "LAB_DNS_TCP: " level info
               
-              {% if wg0_conf | length > 0 %}
+              {% if wg_conf_stat.stat.exists %}
               # Lab network can only egress via WireGuard
               ip saddr {{ lab_network }} oifname "wg0" accept
               
@@ -180,7 +185,7 @@
           table inet nat {
             chain postrouting {
               type nat hook postrouting priority 100; policy accept;
-              {% if wg0_conf | length > 0 %}
+              {% if wg_conf_stat.stat.exists %}
               # NAT lab traffic going out via WireGuard
               ip saddr {{ lab_network }} oifname "wg0" masquerade
               {% else %}
@@ -209,6 +214,40 @@
             }
             
             error_page 404 /index.html;
+          }
+
+          # Neko Tor Browser UI (port 8080)
+          server {
+            listen 8080;
+            server_name _;
+
+            location / {
+              proxy_pass http://{{ neko_ip }}:8080;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+            }
+          }
+
+          # Neko Chromium UI (port 8090)
+          server {
+            listen 8090;
+            server_name _;
+
+            location / {
+              proxy_pass http://{{ neko_ip }}:8090;
+              proxy_http_version 1.1;
+              proxy_set_header Upgrade $http_upgrade;
+              proxy_set_header Connection "upgrade";
+              proxy_set_header Host $host;
+              proxy_set_header X-Real-IP $remote_addr;
+              proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+              proxy_set_header X-Forwarded-Proto $scheme;
+            }
           }
           
           # OpenRelik API (port 8710)
@@ -245,7 +284,7 @@
             server_name _;
             
             location /guacamole/ {
-              proxy_pass http://127.0.0.1:8080/guacamole/;
+              proxy_pass http://127.0.0.1:8082/guacamole/;
               proxy_set_header Host $host;
               proxy_set_header X-Real-IP $remote_addr;
               proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -477,7 +516,7 @@
                 - postgres
               restart: unless-stopped
               ports:
-                - "8080:8080"
+                - "8082:8080"
               environment:
                 GUACD_HOSTNAME: guacd
                 GUACD_PORT: 4822

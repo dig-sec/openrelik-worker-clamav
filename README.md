@@ -17,6 +17,7 @@ This lab provides a secure, isolated environment for analyzing malicious softwar
 │ Host Machine                                     │
 │   Access: localhost:8710/8711 (OpenRelik)      │
 │           localhost:18080/guacamole (Guacamole) │
+│           localhost:8080 (Neko Tor Browser)     │
 ├─────────────────────────────────────────────────┤
 │ Firewall VM (10.20.0.1)                        │
 │   - nginx reverse proxy                         │
@@ -30,6 +31,10 @@ This lab provides a secure, isolated environment for analyzing malicious softwar
 │  - Docker containers           - Full REMnux dist │
 │  - Forensics analysis          - RDP enabled     │
 │  - Internet via firewall       - Analysis tools  │
+│                                                  │
+│  Neko Tor Browser (10.20.0.40)                  │
+│  - WebRTC Tor Browser session                    │
+│  - Internet via firewall                         │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -98,7 +103,7 @@ export OPENRELIK_ALLOWLIST="your-email@gmail.com"
 
 This will:
 - Start the utgard-lab libvirt network (requires sudo password)
-- Provision three VMs: firewall, openrelik, remnux
+- Provision four VMs: firewall, openrelik, remnux, neko
 - Install all tools and configure networking
 - Enable packet capture and IDS monitoring
 
@@ -109,6 +114,7 @@ This will:
 - **Guacamole Web Gateway**: http://localhost:18080/guacamole/ (login: `guacadmin/guacadmin`, routed via nginx)
 - **OpenRelik UI**: http://localhost:8711/
 - **OpenRelik API**: http://localhost:8710/api/v1/docs/
+- **Neko Tor Browser**: http://localhost:8080/ (login: `neko/admin`)
   
 
 Authentication:
@@ -136,6 +142,8 @@ vagrant status               # Check VM status
 vagrant up firewall          # Start only firewall
 vagrant provision openrelik  # Re-run ansible on openrelik
 vagrant ssh remnux           # SSH into REMnux
+vagrant up neko              # Start Neko Tor Browser VM
+vagrant provision neko       # Rebuild Neko container and config
 ```
 
 **Inside VMs:**

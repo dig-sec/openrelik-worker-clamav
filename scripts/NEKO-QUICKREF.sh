@@ -15,7 +15,8 @@
 ./scripts/test-connections.sh
 
 # 4. Access Neko
-# Browser: http://localhost:8080
+# Tor Browser:     http://localhost:8080
+# Chromium Browser: http://localhost:8090
 # Credentials: neko / admin
 
 
@@ -44,6 +45,7 @@ sudo journalctl -u neko -f
 # Restart docker container
 vagrant ssh neko
 sudo docker restart neko-tor-browser
+sudo docker restart neko-chromium-browser
 
 
 # ============================================
@@ -58,6 +60,7 @@ vagrant ssh neko -c "sudo docker ps | grep neko"
 
 # View container logs
 vagrant ssh neko -c "sudo docker logs neko-tor-browser"
+vagrant ssh neko -c "sudo docker logs neko-chromium-browser"
 
 # Test port accessibility
 curl -v http://localhost:8080/
@@ -72,8 +75,10 @@ vagrant ssh firewall -c "curl http://10.20.0.40:8080/"
 
 # Neko VM IP: 10.20.0.40
 # Host port mapping:
-#   8080 → Neko Web UI
-#   8081 → WebRTC broadcast
+#   8080 → Neko Tor Web UI
+#   8081 → Tor WebRTC broadcast
+#   8090 → Neko Chromium Web UI
+#   8091 → Chromium WebRTC broadcast
 
 # Firewall: routes lab traffic through Mullvad VPN (if configured)
 # Neko: adds Tor Browser anonymity on top

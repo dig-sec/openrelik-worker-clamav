@@ -7,8 +7,25 @@
     neko_user: "vagrant"
     neko_port: 8080
     neko_broadcast_port: 8081
+    neko_chromium_port: 8090
+    neko_chromium_broadcast_port: 8091
     
   tasks:
+    - name: Set default gateway to firewall (lab network only route)
+      shell: |
+        ip route del default || true
+        ip route add default via {{ lab_gateway }}
+      changed_when: false
+
+    - name: Make gateway persistent
+      copy:
+        dest: /etc/network/if-up.d/lab-gateway
+        mode: '0755'
+        content: |
+          #!/bin/bash
+          ip route del default 2>/dev/null || true
+          ip route add default via {{ lab_gateway }}
+
     - name: Update apt cache
       apt:
         update_cache: yes
@@ -70,18 +87,44 @@
                 - "{{ neko_port }}:8080"
                 - "{{ neko_broadcast_port }}:8081"
               environment:
-                - NEKO_SCREEN=1920x1080
-                - NEKO_PASSWORD={{ neko_password }}
-                - NEKO_PASSWORD_ADMIN={{ neko_admin_password }}
-                - NEKO_BIND=0.0.0.0:8080
-                - NEKO_BROADCAST=0.0.0.0:8081
+                - NEKO_DESKTOP_SCREEN=1920x1080
+                - NEKO_MEMBER_PROVIDER=multiuser
+                - NEKO_MEMBER_MULTIUSER_USER_PASSWORD={{ neko_password }}
+                - NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD={{ neko_admin_password }}
+                - NEKO_SERVER_BIND=0.0.0.0:8080
+                - NEKO_WEBRTC_BIND=0.0.0.0:8081
                 - NEKO_NAT=1
-                - NEKO_EPR=50000-50100
+                - NEKO_WEBRTC_EPR=50000-50100
               cap_add:
                 - SYS_ADMIN
                 - NET_ADMIN
               sysctls:
-                - net.ipv4.ip_forwarding=1
+                - net.ipv4.ip_forward=1
+              networks:
+                - neko-network
+
+            neko-chromium:
+              image: ghcr.io/m1k1o/neko/chromium:latest
+              container_name: neko-chromium-browser
+              restart: unless-stopped
+              shm_size: 2gb
+              ports:
+                - "{{ neko_chromium_port }}:8080"
+                - "{{ neko_chromium_broadcast_port }}:8081"
+              environment:
+                - NEKO_DESKTOP_SCREEN=1920x1080
+                - NEKO_MEMBER_PROVIDER=multiuser
+                - NEKO_MEMBER_MULTIUSER_USER_PASSWORD={{ neko_password }}
+                - NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD={{ neko_admin_password }}
+                - NEKO_SERVER_BIND=0.0.0.0:8080
+                - NEKO_WEBRTC_BIND=0.0.0.0:8081
+                - NEKO_NAT=1
+                - NEKO_WEBRTC_EPR=50101-50200
+              cap_add:
+                - SYS_ADMIN
+                - NET_ADMIN
+              sysctls:
+                - net.ipv4.ip_forward=1
               networks:
                 - neko-network
           

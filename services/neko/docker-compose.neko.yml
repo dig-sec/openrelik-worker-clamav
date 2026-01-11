@@ -10,24 +10,25 @@ services:
       - "8080:8080"   # Neko Web UI
       - "8081:8081"   # WebRTC broadcast port
     environment:
-      # Display resolution
-      - NEKO_SCREEN=1920x1080
-      # Access credentials
-      - NEKO_PASSWORD=neko
-      - NEKO_PASSWORD_ADMIN=admin
-      # Binding configuration
-      - NEKO_BIND=0.0.0.0:8080
-      - NEKO_BROADCAST=0.0.0.0:8081
+      # Display resolution (v3)
+      - NEKO_DESKTOP_SCREEN=1920x1080
+      # Multiuser auth (v3)
+      - NEKO_MEMBER_PROVIDER=multiuser
+      - NEKO_MEMBER_MULTIUSER_USER_PASSWORD=neko
+      - NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD=admin
+      # Binding configuration (v3)
+      - NEKO_SERVER_BIND=0.0.0.0:8080
+      - NEKO_WEBRTC_BIND=0.0.0.0:8081
       # Network settings
       - NEKO_NAT=1
-      - NEKO_EPR=50000-50100
+      - NEKO_WEBRTC_EPR=50000-50100
       # Tor specific settings
       - NEKO_LOGS=false
     cap_add:
       - SYS_ADMIN
       - NET_ADMIN
     sysctls:
-      - net.ipv4.ip_forwarding=1
+      - net.ipv4.ip_forward=1
     volumes:
       - neko_data:/home/neko
     networks:
@@ -39,8 +40,44 @@ services:
       retries: 3
       start_period: 40s
 
+  neko-chromium:
+    image: ghcr.io/m1k1o/neko/chromium:latest
+    container_name: neko-chromium-browser
+    restart: unless-stopped
+    shm_size: 2gb
+    ports:
+      - "8090:8080"   # Chromium Web UI
+      - "8091:8081"   # WebRTC broadcast port
+    environment:
+      - NEKO_DESKTOP_SCREEN=1920x1080
+      - NEKO_MEMBER_PROVIDER=multiuser
+      - NEKO_MEMBER_MULTIUSER_USER_PASSWORD=neko
+      - NEKO_MEMBER_MULTIUSER_ADMIN_PASSWORD=admin
+      - NEKO_SERVER_BIND=0.0.0.0:8080
+      - NEKO_WEBRTC_BIND=0.0.0.0:8081
+      - NEKO_NAT=1
+      - NEKO_WEBRTC_EPR=50101-50200
+      - NEKO_LOGS=false
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    sysctls:
+      - net.ipv4.ip_forward=1
+    volumes:
+      - neko_chromium_data:/home/neko
+    networks:
+      - neko-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   neko_data:
+    driver: local
+  neko_chromium_data:
     driver: local
 
 networks:

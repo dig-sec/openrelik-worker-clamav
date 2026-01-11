@@ -32,6 +32,7 @@ The firewall VM runs nginx as a reverse proxy with the following servers configu
 | Port | Service | Target |
 |------|---------|--------|
 | 80 | Landing Page | Static HTML from `/vagrant/services/index.html` |
+| 8080 | Neko Tor Browser UI | Proxy to 10.20.0.40:8080 |
 | 8710 | OpenRelik API | Proxy to openrelik-redis:8710 |
 | 8711 | OpenRelik UI | Proxy to openrelik-redis:8711 |
 | 18080 | Guacamole Gateway | Proxy to 127.0.0.1:8080/guacamole/ |
@@ -57,15 +58,18 @@ The landing page is served directly from the shared Vagrant folder, accessible t
 - Quick-access buttons to main services
 
 ### 2. Quick-Access Panel
-Three primary buttons for immediate access:
+Primary buttons for immediate access:
 - 🚀 **Launch OpenRelik UI** - Main forensic analysis platform
 - 📚 **API Documentation** - Developer reference
 - 🖥️ **Remote Desktop** - Analyst workstation access
+- 🧭 **Open Neko Tor Browser** - Isolated Tor Browser session
+- ♻️ **Copy Neko Rebuild Command** - Clean rebuild shortcut
 
 ### 3. Core Services
 - **OpenRelik UI**: Web interface for evidence management
 - **OpenRelik API**: REST API with Swagger documentation
 - **Guacamole Gateway**: Remote desktop protocol gateway
+- **Neko Tor Browser**: Shared Tor Browser session for analysis
 
 ### 4. Forensic Workers (Categorized)
 Workers organized by function:
