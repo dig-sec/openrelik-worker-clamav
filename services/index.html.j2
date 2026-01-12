@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Utgard Lab</title>
+    <style>
+        :root {
+            --bg: #0a0c0d;
+            --bg-2: #101412;
+            --grid: rgba(0, 255, 153, 0.05);
+            --neon: #00ff99;
+            --neon-2: #7dffcf;
+            --text: #d6f7e7;
+            --muted: #7ba391;
+            --panel: #0f1513;
+            --panel-2: #0c110f;
+            --border: rgba(0, 255, 153, 0.18);
+            --danger: #ff5f5f;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "IBM Plex Mono", "JetBrains Mono", "Courier New", monospace;
+            background: radial-gradient(1200px 600px at 20% -10%, rgba(0, 255, 153, 0.12), transparent 60%),
+                        radial-gradient(900px 500px at 85% 10%, rgba(0, 204, 136, 0.08), transparent 50%),
+                        var(--bg);
+            color: var(--text);
+            padding: 32px 20px 60px;
+            line-height: 1.6;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(var(--grid) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .hero {
+            border: 1px solid var(--border);
+            background: linear-gradient(135deg, rgba(0, 255, 153, 0.08), rgba(0, 0, 0, 0.6));
+            padding: 28px;
+            border-radius: 10px;
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+        }
+
+        .hero h1 {
+            font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+            font-size: clamp(2rem, 3.8vw, 3.2rem);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--neon);
+        }
+
+        .hero p {
+            color: var(--muted);
+            margin-top: 8px;
+            max-width: 720px;
+        }
+
+        .status {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .status-chip {
+            border: 1px solid var(--border);
+            background: var(--panel);
+            padding: 6px 12px;
+            border-radius: 999px;
+            color: var(--neon-2);
+            font-size: 0.85rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 18px;
+            margin-top: 24px;
+        }
+
+        .card {
+            background: var(--panel-2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .card h3 {
+            font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+            font-size: 1.1rem;
+            color: var(--neon-2);
+            margin-bottom: 6px;
+        }
+
+        .card p {
+            color: var(--muted);
+            font-size: 0.92rem;
+            margin-bottom: 12px;
+        }
+
+        .card a {
+            color: var(--neon);
+            text-decoration: none;
+            border-bottom: 1px dashed rgba(0, 255, 153, 0.4);
+        }
+
+        .card a:hover {
+            color: #c1ffe8;
+        }
+
+        .creds {
+            margin-top: 28px;
+            border: 1px solid rgba(255, 95, 95, 0.4);
+            background: rgba(255, 95, 95, 0.05);
+            padding: 16px 18px;
+            border-radius: 10px;
+        }
+
+        .creds h4 {
+            color: var(--danger);
+            font-family: "Space Grotesk", "IBM Plex Sans", sans-serif;
+            margin-bottom: 8px;
+        }
+
+        .creds .line {
+            color: var(--text);
+            font-size: 0.9rem;
+        }
+
+        .footer {
+            margin-top: 32px;
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .hero {
+                padding: 22px;
+            }
+            .status {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <section class="hero">
+            <h1>Utgard Lab</h1>
+            <p>Contained malware analysis and forensics workspace. All lab traffic routes through a hardened firewall layer.</p>
+            <div class="status">
+                <div class="status-chip">Isolated Network</div>
+                <div class="status-chip">Default Deny</div>
+                <div class="status-chip">Packet Capture</div>
+                <div class="status-chip">IDS Monitoring</div>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card">
+                <h3>OpenRelik UI</h3>
+                <p>Artifact indexing, triage, and analysis console.</p>
+                <a href="http://localhost:{{ port_openrelik_ui }}/">http://localhost:{{ port_openrelik_ui }}/</a>
+            </div>
+            <div class="card">
+                <h3>OpenRelik API</h3>
+                <p>REST API docs for automation and integrations.</p>
+                <a href="http://localhost:{{ port_openrelik_api }}/api/v1/docs/">http://localhost:{{ port_openrelik_api }}/api/v1/docs/</a>
+            </div>
+            <div class="card">
+                <h3>Guacamole</h3>
+                <p>Browser-based RDP/SSH gateway into REMnux.</p>
+                <a href="http://localhost:{{ port_guacamole }}/guacamole/">http://localhost:{{ port_guacamole }}/guacamole/</a>
+            </div>
+            <div class="card">
+                <h3>Neko Tor Browser</h3>
+                <p>Shared Tor browser session for malware web analysis.</p>
+                <a href="http://localhost:{{ port_neko_tor }}/">http://localhost:{{ port_neko_tor }}/</a>
+            </div>
+            <div class="card">
+                <h3>Neko Chromium</h3>
+                <p>Shared Chromium session for clean browsing workflows.</p>
+                <a href="http://localhost:{{ port_neko_chromium }}/">http://localhost:{{ port_neko_chromium }}/</a>
+            </div>
+        </section>
+
+        <section class="creds">
+            <h4>Default Credentials</h4>
+            <div class="line">OpenRelik: admin / admin</div>
+            <div class="line">Guacamole: guacadmin / guacadmin</div>
+            <div class="line">Neko: neko / admin</div>
+        </section>
+
+        <div class="footer">Utgard // isolated analysis mesh</div>
+    </div>
+</body>
+</html>

@@ -138,7 +138,7 @@ select_config() {
         cat "$config_file"
     } > "$ACTIVE_CONFIG"
     
-    echo -e "${GREEN}✓ Selected: $config${NC}"
+    echo -e "${GREEN}[OK] Selected: $config${NC}"
     echo -e "  Endpoint: $(grep "^Endpoint = " "$config_file" | cut -d' ' -f3)"
     echo ""
     echo "To apply this config:"
@@ -193,17 +193,17 @@ test_connectivity() {
     
     # Try to ping the gateway
     if vagrant ssh firewall -c "ping -c 1 10.64.0.1" 2>/dev/null; then
-        echo -e "${GREEN}✓ Mullvad gateway reachable${NC}"
+        echo -e "${GREEN}[OK] Mullvad gateway reachable${NC}"
     else
-        echo -e "${YELLOW}⚠ Mullvad gateway not reachable (firewall VM may not be running)${NC}"
+        echo -e "${YELLOW}[WARNING] Mullvad gateway not reachable (firewall VM may not be running)${NC}"
     fi
     
     # Check WireGuard interface
     if vagrant ssh firewall -c "sudo wg show wg0 2>/dev/null" >/dev/null 2>&1; then
-        echo -e "${GREEN}✓ WireGuard interface active${NC}"
+        echo -e "${GREEN}[OK] WireGuard interface active${NC}"
         vagrant ssh firewall -c "sudo wg show wg0 | head -5" 2>/dev/null || true
     else
-        echo -e "${YELLOW}⚠ WireGuard interface not active${NC}"
+        echo -e "${YELLOW}[WARNING] WireGuard interface not active${NC}"
     fi
     
     echo ""
@@ -220,7 +220,7 @@ backup_config() {
     local backup_file="$BACKUP_DIR/wg0_${timestamp}.conf"
     
     cp "$ACTIVE_CONFIG" "$backup_file"
-    echo -e "${GREEN}✓ Config backed up to: $backup_file${NC}"
+    echo -e "${GREEN}[OK] Config backed up to: $backup_file${NC}"
 }
 
 restore_config() {
@@ -232,7 +232,7 @@ restore_config() {
     fi
     
     cp "$latest" "$ACTIVE_CONFIG"
-    echo -e "${GREEN}✓ Restored from: $latest${NC}"
+    echo -e "${GREEN}[OK] Restored from: $latest${NC}"
     show_current
 }
 

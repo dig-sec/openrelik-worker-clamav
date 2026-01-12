@@ -1,0 +1,91 @@
+---
+# NFTables firewall configuration tasks
+- name: Enable IP forwarding
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    state: present
+    reload: yes
+
+- name: Configure nftables for multi-homed firewall
+  copy:
+    dest: /etc/nftables.conf
+    mode: '0644'
+    content: |
+      #!/usr/sbin/nftables -f
+      
+      # Clear any existing rules
+      flush ruleset
+      
+      table inet filter {
+        chain input {
+          type filter hook input priority 0; policy drop;
+          
+          # Allow established/related connections
+          ct state established,related accept
+          
+          # Allow loopback
+          iif lo accept
+          
+          # Allow SSH from vagrant-libvirt network (host access only)
+          iifname "eth0" ip saddr 192.168.121.0/24 tcp dport 22 accept
+          
+          # Allow lab proxy ports from vagrant-libvirt network
+          # - {{ port_landing }}: landing page
+          # - {{ port_openrelik_ui }}: OpenRelik UI
+          # - {{ port_openrelik_api }}: OpenRelik API
+          # - {{ port_guacamole }}: Guacamole
+          # - {{ port_neko_tor }}: Neko Tor Browser
+          # - {{ port_neko_chromium }}: Neko Chromium
+          iifname "eth0" ip saddr 192.168.121.0/24 tcp dport { 80, 443, {{ port_landing }}, {{ port_openrelik_ui }}, {{ port_openrelik_api }}, {{ port_guacamole }}, {{ port_neko_tor }}, {{ port_neko_chromium }} } accept
+          
+          # Allow all from lab network (utgard-lab)
+          iifname "eth1" ip saddr {{ lab_network }} accept
+        }
+        
+        chain forward {
+          type filter hook forward priority 0; policy drop;
+          
+          # Allow established/related
+          ct state established,related accept
+          
+          # Allow lab hosts to forward through firewall (egress)
+          iifname "eth1" ip saddr {{ lab_network }} accept
+          
+          # Allow replies back to lab network (ingress)
+          oifname "eth1" ip daddr {{ lab_network }} ct state established,related accept
+        }
+        
+        chain output {
+          type filter hook output priority 0; policy accept;
+        }
+      }
+      
+      table ip nat {
+        chain prerouting {
+          type nat hook prerouting priority -100; policy accept;
+        }
+        
+        chain postrouting {
+          type nat hook postrouting priority 100; policy accept;
+          
+          # MASQUERADE lab traffic exiting via vagrant-libvirt interface (no VPN)
+          oifname "eth0" ip saddr {{ lab_network }} masquerade
+          
+          # MASQUERADE lab traffic exiting via wg0 (Mullvad tunnel)
+          oifname "wg0" ip saddr {{ lab_network }} masquerade
+        }
+      }
+  register: nft_config
+
+- name: Enable nftables service
+  systemd:
+    name: nftables
+    enabled: yes
+    state: started
+
+- name: Reload nftables rules
+  systemd:
+    name: nftables
+    state: reloaded
+  when: nft_config.changed

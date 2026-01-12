@@ -15,9 +15,9 @@ This lab provides a secure, isolated environment for analyzing malicious softwar
 ```
 ┌─────────────────────────────────────────────────┐
 │ Host Machine                                     │
-│   Access: localhost:8710/8711 (OpenRelik)      │
-│           localhost:18080/guacamole (Guacamole) │
-│           localhost:8080 (Neko Tor Browser)     │
+│   Access: localhost:8221/8222 (OpenRelik)      │
+│           localhost:8223/guacamole (Guacamole) │
+│           localhost:8224 (Neko Tor Browser)     │
 ├─────────────────────────────────────────────────┤
 │ Firewall VM (10.20.0.1)                        │
 │   - nginx reverse proxy                         │
@@ -111,10 +111,10 @@ This will:
 
 ### 5. Access Services
 
-- **Guacamole Web Gateway**: http://localhost:18080/guacamole/ (login: `guacadmin/guacadmin`, routed via nginx)
-- **OpenRelik UI**: http://localhost:8711/
-- **OpenRelik API**: http://localhost:8710/api/v1/docs/
-- **Neko Tor Browser**: http://localhost:8080/ (login: `neko/admin`)
+- **Guacamole Web Gateway**: http://localhost:8223/guacamole/ (login: `guacadmin/guacadmin`, routed via nginx)
+- **OpenRelik UI**: http://localhost:8221/
+- **OpenRelik API**: http://localhost:8222/api/v1/docs/
+- **Neko Tor Browser**: http://localhost:8224/ (login: `neko/admin`)
   
 
 Authentication:
@@ -226,20 +226,20 @@ tail -f /var/log/syslog
 
 ## Security Features
 
-✅ **Network Isolation**: Lab VMs on isolated network with no direct internet  
-✅ **VPN Egress**: All lab traffic routed through Mullvad WireGuard tunnel  
-✅ **Packet Capture**: Continuous pcap recording of all lab network traffic  
-✅ **IDS Monitoring**: Suricata IDS analyzing all lab traffic  
-✅ **DNS Logging**: All DNS queries logged with nftables for C2 analysis  
-✅ **Firewall Protection**: nftables default-deny with explicit allow rules  
-✅ **Reverse Proxy**: No direct lab VM access, only via firewall proxies  
-✅ **SSH Restrictions**: SSH access limited to vagrant-libvirt network only  
+* **Network Isolation**: Lab VMs on isolated network with no direct internet  
+* **VPN Egress**: All lab traffic routed through Mullvad WireGuard tunnel  
+* **Packet Capture**: Continuous pcap recording of all lab network traffic  
+* **IDS Monitoring**: Suricata IDS analyzing all lab traffic  
+* **DNS Logging**: All DNS queries logged with nftables for C2 analysis  
+* **Firewall Protection**: nftables default-deny with explicit allow rules  
+* **Reverse Proxy**: No direct lab VM access, only via firewall proxies  
+* **SSH Restrictions**: SSH access limited to vagrant-libvirt network only  
 
 ## Malware Analysis Workflow
 
 1. **Prepare**: Start lab with `./scripts/start-lab.sh`
-2. **Transfer Sample**: Upload malware to OpenRelik via UI (localhost:8711)
-3. **Analyze**: Use REMnux via Guacamole (localhost:18080/guacamole)
+2. **Transfer Sample**: Upload malware to OpenRelik via UI (localhost:8221)
+3. **Analyze**: Use REMnux via Guacamole (localhost:8223/guacamole)
 4. **Monitor**: Watch network activity in firewall logs
 5. **Extract IOCs**: Use OpenRelik to index and search artifacts
 6. **Review**: Check packet captures in `/var/log/pcaps/` on firewall

@@ -7,16 +7,27 @@
 
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=./lib/config.sh
+. "$SCRIPT_DIR/lib/config.sh"
+# shellcheck source=./lib/common.sh
+. "$SCRIPT_DIR/lib/common.sh"
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║         Utgard Lab Provisioning Assistant                   ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
-echo ""
+PORT_LANDING="$(utgard_config_get 'ports.landing' '8220')"
+PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
+PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
+PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
+PORT_NEKO_TOR="$(utgard_config_get 'ports.neko_tor' '8224')"
+PORT_NEKO_CHROMIUM="$(utgard_config_get 'ports.neko_chromium' '8225')"
+
+RED="$UTGARD_RED"
+GREEN="$UTGARD_GREEN"
+YELLOW="$UTGARD_YELLOW"
+BLUE="$UTGARD_BLUE"
+NC="$UTGARD_NC"
+
+utgard_banner "Utgard Lab Provisioning Assistant"
 
 # Check if user is in libvirt group
 if ! groups | grep -q libvirt; then
@@ -74,11 +85,11 @@ if virsh net-list 2>/dev/null | grep -q "utgard-lab"; then
     
     # Check if it's active
     if virsh net-list 2>/dev/null | grep "utgard-lab" | grep -q "active"; then
-        echo -e "${GREEN}✓ Network is active${NC}"
+        echo -e "${GREEN}[OK] Network is active${NC}"
     else
         echo -e "${YELLOW}Network defined but not active - activating...${NC}"
         sudo virsh net-start utgard-lab
-        echo -e "${GREEN}✓ Network activated${NC}"
+        echo -e "${GREEN}[OK] Network activated${NC}"
     fi
 else
     echo -e "${YELLOW}not found - creating...${NC}"
@@ -86,7 +97,7 @@ else
     # Define and start the network from repo config
     sudo virsh net-define "$ROOT_DIR/network.xml"
     sudo virsh net-start utgard-lab
-    echo -e "${GREEN}✓ Network created and started${NC}"
+    echo -e "${GREEN}[OK] Network created and started${NC}"
 fi
 
 echo ""
@@ -94,20 +105,20 @@ echo -e "${BLUE}Step 2: Provisioning virtual machines...${NC}"
 echo "(This takes 30-45 minutes the first time)"
 echo ""
 
-ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT_DIR"
 
-# Run vagrant up
-if vagrant up; then
+# Run vagrant up (firewall first for routing)
+if utgard_vagrant_up_ordered; then
     echo ""
-    echo -e "${GREEN}✓ All VMs provisioned successfully${NC}"
+    echo -e "${GREEN}[OK] All VMs provisioned successfully${NC}"
     echo ""
     echo -e "${BLUE}Access your lab:${NC}"
-    echo "  - Neko Tor Browser: http://localhost:8080/"
-    echo "  - Neko Chromium Browser: http://localhost:8090/"
-    echo "  - OpenRelik UI:  http://localhost:8711/"
-    echo "  - OpenRelik API: http://localhost:8710/api/v1/docs/"
-    echo "  - Guacamole Web: http://localhost:18080/guacamole/"
+    echo "  - Landing Page: http://localhost:${PORT_LANDING}/"
+    echo "  - Neko Tor Browser: http://localhost:${PORT_NEKO_TOR}/"
+    echo "  - Neko Chromium Browser: http://localhost:${PORT_NEKO_CHROMIUM}/"
+    echo "  - OpenRelik UI:  http://localhost:${PORT_OPENRELIK_UI}/"
+    echo "  - OpenRelik API: http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
+    echo "  - Guacamole Web: http://localhost:${PORT_GUACAMOLE}/guacamole/"
     echo ""
     echo -e "${BLUE}Neko Credentials:${NC}"
     echo "  - User: neko | Admin: admin"

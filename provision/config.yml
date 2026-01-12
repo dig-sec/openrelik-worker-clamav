@@ -1,0 +1,37 @@
+lab:
+  network: "10.20.0.0/24"
+  gateway_ip: "10.20.0.1"
+  openrelik_ip: "10.20.0.30"
+  remnux_ip: "10.20.0.20"
+  neko_ip: "10.20.0.40"
+
+ports:
+  landing: 8220
+  openrelik_ui: 8221
+  openrelik_api: 8222
+  guacamole: 8223
+  neko_tor: 8224
+  neko_chromium: 8225
+  neko_webrtc_tor: 8081
+  neko_webrtc_chromium: 8091
+
+ports_internal:
+  openrelik_ui: 8711
+  openrelik_api: 8710
+  guacamole: 8080
+  neko_tor: 8080
+  neko_chromium: 8090
+
+resources:
+  firewall:
+    memory: 2048
+    cpus: 2
+  openrelik:
+    memory: 4096
+    cpus: 2
+  remnux:
+    memory: 4096
+    cpus: 2
+  neko:
+    memory: 3072
+    cpus: 2

@@ -4,33 +4,40 @@
 
 set -e
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m'
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=./lib/config.sh
+. "$SCRIPT_DIR/lib/config.sh"
+# shellcheck source=./lib/common.sh
+. "$SCRIPT_DIR/lib/common.sh"
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║         Utgard Lab - Full Deploy & Test Suite             ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
-echo ""
+PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
+PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
+PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
+
+RED="$UTGARD_RED"
+GREEN="$UTGARD_GREEN"
+YELLOW="$UTGARD_YELLOW"
+BLUE="$UTGARD_BLUE"
+NC="$UTGARD_NC"
+
+utgard_banner "Utgard Lab - Full Deploy & Test Suite"
 
 # Step 1: Create network
 echo -e "${BLUE}Step 1: Network Setup${NC}"
 if virsh net-list 2>/dev/null | grep -q "utgard-lab"; then
-    echo -e "${GREEN}✓ Network already defined${NC}"
+    echo -e "${GREEN}[OK] Network already defined${NC}"
     if virsh net-list 2>/dev/null | grep "utgard-lab" | grep -q "active"; then
-        echo -e "${GREEN}✓ Network is active${NC}"
+        echo -e "${GREEN}[OK] Network is active${NC}"
     else
         echo "Starting network..."
         sudo virsh net-start utgard-lab
-        echo -e "${GREEN}✓ Network started${NC}"
+        echo -e "${GREEN}[OK] Network started${NC}"
     fi
 else
     echo "Creating network..."
     sudo virsh net-define network.xml
     sudo virsh net-start utgard-lab
-    echo -e "${GREEN}✓ Network created and started${NC}"
+    echo -e "${GREEN}[OK] Network created and started${NC}"
 fi
 echo ""
 
@@ -39,9 +46,9 @@ echo -e "${BLUE}Step 2: Cleanup${NC}"
 if [ -d ".vagrant" ]; then
     echo "Removing old .vagrant directory..."
     rm -rf .vagrant
-    echo -e "${GREEN}✓ Cleaned${NC}"
+    echo -e "${GREEN}[OK] Cleaned${NC}"
 else
-    echo -e "${GREEN}✓ No old artifacts${NC}"
+    echo -e "${GREEN}[OK] No old artifacts${NC}"
 fi
 echo ""
 
@@ -49,16 +56,16 @@ echo ""
 echo -e "${BLUE}Step 3: VM Provisioning${NC}"
 echo -e "${YELLOW}This takes 30-45 minutes on first run...${NC}"
 echo ""
-vagrant up
+utgard_vagrant_up_ordered
 echo ""
-echo -e "${GREEN}✓ VMs provisioned${NC}"
+echo -e "${GREEN}[OK] VMs provisioned${NC}"
 echo ""
 
 # Step 4: Wait for services to stabilize
 echo -e "${BLUE}Step 4: Service Stabilization${NC}"
 echo "Waiting 10 seconds for services to initialize..."
 sleep 10
-echo -e "${GREEN}✓ Ready to test${NC}"
+echo -e "${GREEN}[OK] Ready to test${NC}"
 echo ""
 
 # Step 5: Run tests
@@ -71,14 +78,14 @@ TEST_RESULT=$?
 echo ""
 echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
 if [ $TEST_RESULT -eq 0 ]; then
-    echo -e "${GREEN}✅ ALL TESTS PASSED${NC}"
+    echo -e "${GREEN}[DONE] ALL TESTS PASSED${NC}"
     echo ""
     echo -e "${GREEN}Services are ready:${NC}"
-    echo "  • Web UI:    http://localhost:8711/"
-    echo "  • API:       http://localhost:8710/api/v1/docs/"
-    echo "  • Guacamole: http://localhost:18080/guacamole/"
+    echo "  • Web UI:    http://localhost:${PORT_OPENRELIK_UI}/"
+    echo "  • API:       http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
+    echo "  • Guacamole: http://localhost:${PORT_GUACAMOLE}/guacamole/"
 else
-    echo -e "${RED}❌ SOME TESTS FAILED${NC}"
+    echo -e "${RED}[ERROR] SOME TESTS FAILED${NC}"
     echo ""
     echo -e "${YELLOW}Troubleshooting:${NC}"
     echo "  1. Check lab status: ./scripts/check-status.sh"

@@ -1,0 +1,33 @@
+---
+- name: Prepare REMnux analyst VM
+  hosts: all
+  become: yes
+  vars:
+    lab_gateway: "10.20.0.1"
+    remnux_install_cli: false
+  
+  tasks:
+    # Network configuration
+    - name: Configure lab network
+      include_tasks: tasks/common/network.yml
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    # Malware analysis tools
+    - name: Install analysis tools
+      include_tasks: tasks/remnux/tools.yml
+
+    # RDP and desktop
+    - name: Setup RDP access
+      include_tasks: tasks/remnux/rdp.yml
+
+    - name: Display REMnux access information
+      debug:
+        msg:
+          - "REMnux VM ready!"
+          - "Access via Guacamole: http://localhost:8223/"
+          - "RDP: 10.20.0.20:3389"
+          - "For full REMnux tools: sudo remnux install --mode=addon --user=vagrant --dev"

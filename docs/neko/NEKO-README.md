@@ -4,11 +4,11 @@
 
 Neko Tor Browser is now integrated into the Utgard lab environment. This provides:
 
-✓ **Secure Tor browsing** - Access .onion sites within an isolated container  
-✓ **Lab network isolation** - All traffic visible on lab network for analysis  
-✓ **Multi-user support** - Multiple analysts can control the browser simultaneously  
-✓ **WebRTC streaming** - Low-latency video via modern web protocols  
-✓ **Guacamole gateway** - Access through existing Guacamole web gateway  
+* **Secure Tor browsing** - Access .onion sites within an isolated container  
+* **Lab network isolation** - All traffic visible on lab network for analysis  
+* **Multi-user support** - Multiple analysts can control the browser simultaneously  
+* **WebRTC streaming** - Low-latency video via modern web protocols  
+* **Guacamole gateway** - Access through existing Guacamole web gateway  
 
 ## Quick Access
 
@@ -128,13 +128,13 @@ See [NEKO-SETUP.md](./NEKO-SETUP.md) for comprehensive troubleshooting.
 
 ## Security Notes
 
-✓ **What's protected:**
+* **What's protected:**
 - Container isolation from host
 - Lab network isolation
 - Persistent privacy (no data on host)
 - VPN + Tor stacking (if Mullvad configured)
 
-⚠️ **What's not protected:**
+WARNING:️ **What's not protected:**
 - Lab admins can see all traffic
 - Browser vulnerabilities still apply
 - No OS-level exploit isolation

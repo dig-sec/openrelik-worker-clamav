@@ -193,18 +193,18 @@ sudo wg-quick up wg0
 
 ### What's Protected
 
-✓ **Lab-to-Internet traffic** encrypted through Mullvad VPN  
-✓ **Multiple endpoint options** for redundancy and diversity  
-✓ **Network isolation** - VPN routes all lab traffic  
-✓ **DNS privacy** - Mullvad DNS (10.64.0.1) used  
-✓ **IPv6 support** - Both IPv4 and IPv6 routed
+* **Lab-to-Internet traffic** encrypted through Mullvad VPN  
+* **Multiple endpoint options** for redundancy and diversity  
+* **Network isolation** - VPN routes all lab traffic  
+* **DNS privacy** - Mullvad DNS (10.64.0.1) used  
+* **IPv6 support** - Both IPv4 and IPv6 routed
 
 ### What's Not Protected
 
-⚠ **Lab internal traffic** - OpenRelik, REMnux, Neko communicate unencrypted within lab network  
-⚠ **Lab to host traffic** - Guacamole (18080), OpenRelik (8710/8711) accessible from host  
-⚠ **WireGuard key exposure** - Private key is the "Famous Wasp" experimental account  
-⚠ **Endpoint IP visibility** - VPN exit IP visible to destination websites
+* **Lab internal traffic** - OpenRelik, REMnux, Neko communicate unencrypted within lab network  
+* **Lab to host traffic** - Guacamole (18080), OpenRelik (8710/8711) accessible from host  
+* **WireGuard key exposure** - Private key is the "Famous Wasp" experimental account  
+* **Endpoint IP visibility** - VPN exit IP visible to destination websites
 
 ## Troubleshooting
 

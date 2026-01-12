@@ -1,0 +1,158 @@
+---
+# Nginx reverse proxy configuration
+- name: Create web root directory for landing page
+  file:
+    path: /var/www/html/lab
+    state: directory
+    mode: '0755'
+
+- name: Render landing page to firewall VM
+  template:
+    src: /tmp/index.html.j2
+    dest: /var/www/html/lab/index.html
+    mode: '0644'
+  ignore_errors: yes
+
+- name: Configure nginx reverse proxy for lab services
+  copy:
+    dest: /etc/nginx/sites-available/lab-proxy
+    mode: '0644'
+    content: |
+      # Main Landing Page
+      server {
+        listen {{ port_landing }} default_server;
+        server_name _;
+        
+        root /var/www/html/lab;
+        index index.html;
+        
+        location / {
+          try_files $uri $uri/ =404;
+        }
+        
+        error_page 404 /index.html;
+      }
+
+      # OpenRelik UI
+      server {
+        listen {{ port_openrelik_ui }};
+        server_name _;
+        
+        location / {
+          proxy_pass http://{{ openrelik_ip }}:8711;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+      
+      # OpenRelik API
+      server {
+        listen {{ port_openrelik_api }};
+        server_name _;
+        
+        location / {
+          proxy_pass http://{{ openrelik_ip }}:8710;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+
+      # Guacamole
+      server {
+        listen {{ port_guacamole }};
+        server_name _;
+
+        location / {
+          proxy_pass http://127.0.0.1:8080;
+          proxy_buffering off;
+          proxy_http_version 1.1;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection $http_connection;
+          proxy_cookie_path /guacamole/ /;
+          access_log off;
+        }
+      }
+
+      # Neko Tor Browser
+      server {
+        listen {{ port_neko_tor }};
+        server_name _;
+
+        location / {
+          proxy_pass http://{{ neko_ip }}:8080;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+
+      # Neko Chromium
+      server {
+        listen {{ port_neko_chromium }};
+        server_name _;
+
+        location / {
+          proxy_pass http://{{ neko_ip }}:8090;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection "upgrade";
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+      }
+  notify: Restart nginx
+
+- name: Configure nginx main configuration (no RDP stream)
+  copy:
+    dest: /etc/nginx/nginx.conf
+    mode: '0644'
+    content: |
+      user www-data;
+      worker_processes auto;
+      pid /run/nginx.pid;
+      include /etc/nginx/modules-enabled/*.conf;
+      
+      events {
+        worker_connections 768;
+      }
+      
+      http {
+        sendfile on;
+        tcp_nopush on;
+        tcp_nodelay on;
+        keepalive_timeout 65;
+        types_hash_max_size 2048;
+        
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        
+        access_log /var/log/nginx/access.log;
+        error_log /var/log/nginx/error.log;
+        
+        gzip on;
+        include /etc/nginx/sites-enabled/*;
+      }
+  notify: Restart nginx
+
+- name: Enable nginx reverse proxy site
+  file:
+    src: /etc/nginx/sites-available/lab-proxy
+    dest: /etc/nginx/sites-enabled/lab-proxy
+    state: link
+
+- name: Remove nginx default site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Restart nginx

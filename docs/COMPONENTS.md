@@ -7,7 +7,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - VM: firewall (10.20.0.1)
 - Playbook: provision/firewall.yml
 - Access: `vagrant ssh firewall`
-- Key services: nginx (ports 80/443/8080/8710/8711/18080), wg0 tunnel (optional), nftables, suricata, tcpdump.
+- Key services: nginx (ports 8220-8225), wg0 tunnel (optional), nftables, suricata, tcpdump.
 - Notes: set `MULLVAD_WG_CONF` before provisioning to enforce VPN egress; otherwise traffic goes out eth0.
 
 ## OpenRelik
@@ -15,7 +15,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - VM: openrelik (10.20.0.30)
 - Playbook: provision/openrelik.yml
 - Install path: /opt/openrelik/openrelik
-- Access: UI http://localhost:8711/ ; API http://localhost:8710/api/v1/docs/ (through firewall reverse proxy)
+- Access: UI http://localhost:8221/ ; API http://localhost:8222/api/v1/docs/ (through firewall reverse proxy)
 - Auth: local admin/admin by default, or Google OAuth via env vars `OPENRELIK_CLIENT_ID`, `OPENRELIK_CLIENT_SECRET`, `OPENRELIK_ALLOWLIST`.
 - Helper scripts inside VM: `openrelik-start`, `openrelik-stop`, `openrelik-logs`.
 
@@ -29,7 +29,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 ## Guacamole
 - Purpose: Browser-based RDP/SSH gateway to lab VMs.
 - Location: Runs on firewall VM via Docker (optional, enabled by default in firewall playbook).
-- Access: http://localhost:18080/guacamole/ (reverse proxied)
+- Access: http://localhost:8223/guacamole/ (reverse proxied)
 - Default credentials: guacadmin/guacadmin (change on first login).
 - Setup guide: docs/GUACAMOLE-SETUP.md
 
@@ -37,7 +37,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - Purpose: Remote multi-user Tor Browser session for .onion research.
 - Compose: services/neko/docker-compose.neko.yml
 - Docs: docs/neko/NEKO-README.md (overview), docs/neko/NEKO-SETUP.md (full guide), docs/neko/NEKO-INTEGRATION.md (change summary), docs/neko/NEKO-ARCHITECTURE.txt (topology), docs/neko/NEKO-SUMMARY.txt (file manifest)
-- Access: http://localhost:8080 (reverse proxied via firewall nginx; credentials in setup doc). Guacamole integration script: scripts/configure-neko-guacamole.sh. Quickref: scripts/NEKO-QUICKREF.sh.
+- Access: http://localhost:8224 (reverse proxied via firewall nginx; credentials in setup doc). Guacamole integration script: scripts/configure-neko-guacamole.sh. Quickref: scripts/NEKO-QUICKREF.sh.
 
 ## Mullvad WireGuard
 - Purpose: VPN egress for the lab; enforced at firewall when configured.
@@ -59,9 +59,9 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - Example settings: provision/settings.toml.example
 
 ## Access Map (Host → Lab)
-- OpenRelik UI/API: localhost:8711 / localhost:8710
-- Guacamole: localhost:18080/guacamole
-- Neko: localhost:8080 (Tor Browser, reverse proxied)
+- OpenRelik UI/API: localhost:8221 / localhost:8222
+- Guacamole: localhost:8223/guacamole
+- Neko: localhost:8224 (Tor Browser, reverse proxied)
 - SSH (via Guacamole or direct host network): firewall 10.20.0.1, remnux 10.20.0.20, openrelik 10.20.0.30
 
 ## Operational Notes

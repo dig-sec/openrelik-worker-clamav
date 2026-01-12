@@ -1,0 +1,67 @@
+---
+- name: Install and configure neko Tor Browser service
+  hosts: all
+  become: yes
+  vars:
+    neko_install_dir: "/opt/neko"
+    neko_user: "vagrant"
+    neko_port: 8080
+    neko_broadcast_port: 8081
+    neko_chromium_port: 8090
+    neko_chromium_broadcast_port: 8091
+    neko_webrtc_ip: ""
+    neko_password: "neko"
+    neko_admin_password: "admin"
+    lab_gateway: "10.20.0.1"
+  
+  tasks:
+    # Network configuration
+    - name: Configure lab network
+      include_tasks: tasks/common/network.yml
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install required packages
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - docker.io
+        state: present
+
+    - name: Start and enable Docker
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Wait for Docker daemon to be ready
+      wait_for:
+        timeout: 15
+      when: false  # This just pauses 15 seconds
+
+    - name: Install Docker Compose (standalone binary)
+      shell: |
+        curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        chmod +x /usr/local/bin/docker-compose
+      args:
+        creates: /usr/local/bin/docker-compose
+
+    # Browser containers setup
+    - name: Setup Neko browsers
+      include_tasks: tasks/neko/browsers.yml
+
+    - name: Display Neko access information
+      debug:
+        msg:
+          - "Neko browsers ready!"
+          - "Tor Browser: http://localhost:8224/"
+          - "Chromium: http://localhost:8225/"
+          - "Default password: {{ neko_password }}"
+          - "Admin password: {{ neko_admin_password }}"

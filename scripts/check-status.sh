@@ -3,21 +3,28 @@
 # Shows current state of network, VMs, and services
 # No VMs? Shows what needs to be done to start them
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=./lib/config.sh
+. "$SCRIPT_DIR/lib/config.sh"
+# shellcheck source=./lib/common.sh
+. "$SCRIPT_DIR/lib/common.sh"
 
-echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}║          Utgard Lab Infrastructure Status                   ║${NC}"
-echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
-echo ""
+RED="$UTGARD_RED"
+GREEN="$UTGARD_GREEN"
+YELLOW="$UTGARD_YELLOW"
+BLUE="$UTGARD_BLUE"
+NC="$UTGARD_NC" # No Color
+
+PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
+PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
+PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
+
+utgard_banner "Utgard Lab Infrastructure Status"
 
 # Check libvirt daemon
 echo -n "Checking libvirt daemon... "
 if systemctl is-active --quiet libvirtd; then
-    echo -e "${GREEN}✓ Running${NC}"
+    echo -e "${GREEN}[OK] Running${NC}"
 else
     echo -e "${RED}✗ Not running${NC}"
     echo "  Fix: sudo systemctl start libvirtd"
@@ -27,9 +34,9 @@ fi
 echo -n "Checking utgard-lab network... "
 if virsh net-list | grep -q "utgard-lab"; then
     if virsh net-list | grep "utgard-lab" | grep -q "active"; then
-        echo -e "${GREEN}✓ Active${NC}"
+        echo -e "${GREEN}[OK] Active${NC}"
     else
-        echo -e "${YELLOW}⚠ Defined but not active${NC}"
+        echo -e "${YELLOW}[WARNING] Defined but not active${NC}"
         echo "  Fix: sudo virsh net-start utgard-lab"
     fi
 else
@@ -60,7 +67,7 @@ else
         state=$(echo $line | awk '{print $3}')
         
         if [ "$state" == "running" ]; then
-            echo -e "  ${GREEN}✓${NC} ${name} (${GREEN}running${NC})"
+            echo -e "  ${GREEN}[OK]${NC} ${name} (${GREEN}running${NC})"
         else
             echo -e "  ${RED}✗${NC} ${name} (${RED}${state}${NC})"
         fi
@@ -74,25 +81,25 @@ echo -e "${BLUE}Services:${NC}"
 # Try to check OpenRelik
 echo -n "  OpenRelik container... "
 if vagrant ssh openrelik -c "docker ps 2>/dev/null | grep -q openrelik" 2>/dev/null; then
-    echo -e "${GREEN}✓ Running${NC}"
+    echo -e "${GREEN}[OK] Running${NC}"
 else
-    echo -e "${YELLOW}⚠ Not running or unreachable${NC}"
+    echo -e "${YELLOW}[WARNING] Not running or unreachable${NC}"
 fi
 
 # Check Guacamole Web Gateway
-echo -n "  Guacamole Web (firewall:18080)... "
-if vagrant ssh firewall -c "curl -fsS http://localhost:18080/guacamole/ >/dev/null" 2>/dev/null; then
-    echo -e "${GREEN}✓ Reachable${NC}"
+echo -n "  Guacamole Web (firewall:${PORT_GUACAMOLE})... "
+if vagrant ssh firewall -c "curl -fsS http://localhost:${PORT_GUACAMOLE}/guacamole/ >/dev/null" 2>/dev/null; then
+    echo -e "${GREEN}[OK] Reachable${NC}"
 else
-    echo -e "${YELLOW}⚠ Not reachable${NC}"
+    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
 fi
 
 # Try to check firewall services
 echo -n "  Firewall nftables... "
 if vagrant ssh firewall -c "sudo nft list ruleset > /dev/null 2>&1" 2>/dev/null; then
-    echo -e "${GREEN}✓ Configured${NC}"
+    echo -e "${GREEN}[OK] Configured${NC}"
 else
-    echo -e "${YELLOW}⚠ Not running or unreachable${NC}"
+    echo -e "${YELLOW}[WARNING] Not running or unreachable${NC}"
 fi
 
 echo ""
@@ -107,34 +114,34 @@ echo "    - REMnux: 10.20.0.20"
 
 echo ""
 echo -e "${BLUE}When Services Are Up:${NC}"
-echo "  - OpenRelik UI: http://localhost:8711/"
-echo "  - OpenRelik API: http://localhost:8710/api/v1/docs/"
-echo "  - Guacamole Web: http://localhost:18080/guacamole/"
+echo "  - OpenRelik UI: http://localhost:${PORT_OPENRELIK_UI}/"
+echo "  - OpenRelik API: http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
+echo "  - Guacamole Web: http://localhost:${PORT_GUACAMOLE}/guacamole/"
 echo ""
 echo "  Test connectivity: ./scripts/test-connections.sh"
 echo ""
 
 # Check if user is in libvirt group
 if groups | grep -q libvirt; then
-    echo -e "${GREEN}✓ User in libvirt group${NC}"
+    echo -e "${GREEN}[OK] User in libvirt group${NC}"
 else
-    echo -e "${YELLOW}⚠ User not in libvirt group${NC}"
+    echo -e "${YELLOW}[WARNING] User not in libvirt group${NC}"
     echo "  Fix: sudo usermod -aG libvirt \$USER (then log out/in)"
 fi
 
 # Check if vagrant is available
 if command -v vagrant &> /dev/null; then
     vagrant_ver=$(vagrant version | head -1)
-    echo -e "${GREEN}✓ ${vagrant_ver}${NC}"
+    echo -e "${GREEN}[OK] ${vagrant_ver}${NC}"
 else
     echo -e "${RED}✗ Vagrant not installed${NC}"
 fi
 
 # Check if vagrant-libvirt is available
 if vagrant plugin list 2>/dev/null | grep -q libvirt; then
-    echo -e "${GREEN}✓ vagrant-libvirt plugin installed${NC}"
+    echo -e "${GREEN}[OK] vagrant-libvirt plugin installed${NC}"
 else
-    echo -e "${YELLOW}⚠ vagrant-libvirt plugin may not be installed${NC}"
+    echo -e "${YELLOW}[WARNING] vagrant-libvirt plugin may not be installed${NC}"
 fi
 
 echo ""

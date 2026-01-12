@@ -1,0 +1,60 @@
+---
+# REMnux malware analysis tools installation
+- name: Install base analysis tools
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - python3
+      - python3-pip
+      - yara
+      - binwalk
+      - tshark
+      - bsdextrautils  # provides hexdump on Ubuntu 22.04
+      - coreutils
+      - file
+    state: present
+
+- name: Download REMnux CLI installer
+  get_url:
+    url: https://github.com/REMnux/remnux-cli/releases/download/v1.5.1/remnux-cli-linux
+    dest: /usr/local/bin/remnux
+    mode: '0755'
+  register: remnux_cli_download
+
+- name: Install REMnux distribution (addon mode)
+  shell: |
+    remnux install --mode=addon --user=vagrant --dev
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+  args:
+    creates: /usr/local/remnux-version
+  register: remnux_install
+  async: 3600
+  poll: 30
+  ignore_errors: yes
+  when: remnux_install_cli
+
+- name: Display REMnux install result
+  debug:
+    msg: "{{ remnux_install.stdout_lines | default(['REMnux installation in progress...']) }}"
+  when: remnux_install_cli and (remnux_install is defined)
+
+- name: Create placeholder for REMnux installer instructions
+  copy:
+    dest: /usr/local/share/remnux-README.txt
+    mode: '0644'
+    content: |
+      REMnux Tools Installation
+      ========================
+      
+      This VM has base malware analysis tools installed.
+      
+      To install the full REMnux toolkit:
+      
+        sudo remnux install --mode=addon --user=vagrant --dev
+      
+      This process may take 30-60 minutes depending on network speed.
+      
+      For more information: https://docs.remnux.org/

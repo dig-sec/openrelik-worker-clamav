@@ -1,0 +1,71 @@
+---
+# OpenRelik worker configuration tasks
+- name: Login to GHCR (if credentials provided)
+  when: (ghcr_username | default('')) != '' and (ghcr_token | default('')) != ''
+  shell: echo "{{ ghcr_token }}" | docker login ghcr.io -u "{{ ghcr_username }}" --password-stdin
+
+- name: Disable GHCR-dependent workers when extra workers are not enabled
+  when: not (enable_extra_workers | bool)
+  shell: |
+    python3 << 'EOF'
+    import yaml
+    compose_file = "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+    with open(compose_file, 'r') as f:
+        compose = yaml.safe_load(f)
+    services = compose.get('services', {})
+    workers = [
+        'openrelik-worker-yara',
+        'openrelik-worker-hayabusa',
+        'openrelik-worker-capa',
+        'openrelik-worker-strings',
+        'openrelik-worker-entropy',
+        'openrelik-worker-eztools',
+        'openrelik-worker-exif',
+        'openrelik-worker-regripper',
+        'openrelik-worker-ssdeep',
+        'openrelik-worker-eml',
+        'openrelik-worker-clamav',
+        'openrelik-worker-grep',
+        'openrelik-worker-plaso',
+        'openrelik-worker-extraction',
+        'openrelik-worker-analyzer-config'
+    ]
+    removed = []
+    for w in workers:
+        if w in services:
+            removed.append(w)
+            del services[w]
+    if removed:
+        with open(compose_file, 'w') as f:
+            yaml.dump(compose, f, default_flow_style=False)
+        print("Disabled workers: " + ", ".join(removed))
+    else:
+        print("No extra workers found to disable")
+    EOF
+  args:
+    chdir: "{{ openrelik_install_dir }}/openrelik"
+  register: worker_disable
+  changed_when: "'Disabled workers:' in worker_disable.stdout"
+
+- name: Show disabled workers
+  debug:
+    var: worker_disable.stdout_lines
+  when: worker_disable.stdout_lines is defined
+
+- name: Apply patch to openrelik-worker-common
+  shell: |
+    cd {{ openrelik_install_dir }}/openrelik
+    if ! docker compose exec -T openrelik-worker-common test -f /app/.patch-applied 2>/dev/null; then
+      echo "Applying task_utils.py JSON fix patch..."
+      docker compose cp /tmp/patches/openrelik-worker-common-task-utils-json-fix.patch openrelik-worker-common:/tmp/
+      docker compose exec -T openrelik-worker-common bash -lc "cd /app && patch -p1 < /tmp/openrelik-worker-common-task-utils-json-fix.patch && touch /app/.patch-applied"
+      docker compose restart openrelik-worker-common
+      echo "Patch applied and worker restarted"
+    else
+      echo "Patch already applied, skipping"
+    fi
+  args:
+    chdir: "{{ openrelik_install_dir }}/openrelik"
+  register: patch_result
+  changed_when: "'Patch applied' in patch_result.stdout"
+  failed_when: false

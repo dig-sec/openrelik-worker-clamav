@@ -1,0 +1,25 @@
+---
+# REMnux RDP and desktop environment setup
+- name: Install RDP and desktop environment
+  apt:
+    name:
+      - xrdp
+      - xfce4
+      - xfce4-goodies
+    state: present
+
+- name: Ensure xrdp service is running
+  systemd:
+    name: xrdp
+    state: started
+    enabled: yes
+
+- name: Create .xsession for xfce4
+  copy:
+    dest: /home/vagrant/.xsession
+    owner: vagrant
+    group: vagrant
+    mode: '0644'
+    content: |
+      #!/bin/bash
+      startxfce4

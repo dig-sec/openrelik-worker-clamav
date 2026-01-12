@@ -1,0 +1,12 @@
+---
+# Common network configuration for lab VMs
+- name: Set default gateway to firewall (lab network only route)
+  command: ip route replace default via {{ lab_gateway }} dev eth1
+  when: ansible_eth1 is defined
+
+- name: Make gateway persistent
+  lineinfile:
+    path: /etc/netplan/50-vagrant.yaml
+    insertafter: "eth1:"
+    line: "      routes:\n        - to: default\n          via: {{ lab_gateway }}"
+    state: present

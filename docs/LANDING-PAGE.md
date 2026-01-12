@@ -59,10 +59,10 @@ The landing page is served directly from the shared Vagrant folder, accessible t
 
 ### 2. Quick-Access Panel
 Primary buttons for immediate access:
-- 🚀 **Launch OpenRelik UI** - Main forensic analysis platform
-- 📚 **API Documentation** - Developer reference
-- 🖥️ **Remote Desktop** - Analyst workstation access
-- 🧭 **Open Neko Tor Browser** - Isolated Tor Browser session
+-  **Launch OpenRelik UI** - Main forensic analysis platform
+-  **API Documentation** - Developer reference
+-  **Remote Desktop** - Analyst workstation access
+-  **Open Neko Tor Browser** - Isolated Tor Browser session
 - ♻️ **Copy Neko Rebuild Command** - Clean rebuild shortcut
 
 ### 3. Core Services
@@ -194,7 +194,7 @@ The page uses semantic HTML sections. To add a new worker section:
 
 ```html
 <div class="section">
-    <div class="section-header">🔍 New Category</div>
+    <div class="section-header"> New Category</div>
     <div class="section-content">
         <p>Description of new worker category</p>
         <div class="workers-grid">
@@ -226,7 +226,7 @@ color: #667eea;  /* Change to your color */
 ### First-Time User
 1. Provision lab: `./scripts/provision.sh`
 2. Access `http://localhost/`
-3. Click "🚀 Launch OpenRelik UI"
+3. Click " Launch OpenRelik UI"
 4. Create analysis tasks using the web interface
 5. Reference worker guides for specific analysis needs
 

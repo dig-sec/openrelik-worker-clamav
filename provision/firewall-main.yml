@@ -1,0 +1,71 @@
+---
+- name: Configure multi-homed firewall with reverse proxy
+  hosts: all
+  become: yes
+  vars:
+    wg0_conf: ""
+    lab_network: "10.20.0.0/24"
+    lab_gateway_ip: "10.20.0.1"
+    openrelik_ip: "10.20.0.30"
+    remnux_ip: "10.20.0.20"
+    neko_ip: "10.20.0.40"
+    port_landing: 8220
+    port_openrelik_ui: 8221
+    port_openrelik_api: 8222
+    port_guacamole: 8223
+    port_neko_tor: 8224
+    port_neko_chromium: 8225
+    enable_guacamole: true
+  
+  handlers:
+    - name: Restart nginx
+      systemd:
+        name: nginx
+        state: restarted
+  
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install packages for firewall and reverse proxy
+      apt:
+        name:
+          - curl
+          - jq
+          - wireguard
+          - nftables
+          - resolvconf
+          - nginx
+          - tcpdump
+          - tshark
+          - suricata
+        state: present
+
+    # WireGuard VPN setup
+    - name: Configure WireGuard
+      include_tasks: tasks/firewall/wireguard.yml
+
+    # NFTables firewall rules
+    - name: Configure NFTables firewall
+      include_tasks: tasks/firewall/nftables.yml
+
+    # Nginx reverse proxy
+    - name: Configure Nginx reverse proxy
+      include_tasks: tasks/firewall/nginx.yml
+
+    # Guacamole Docker setup
+    - name: Setup Guacamole
+      include_tasks: tasks/firewall/guacamole.yml
+
+    # Network monitoring
+    - name: Setup monitoring
+      include_tasks: tasks/firewall/monitoring.yml
+
+    # Post-provision health checks
+    - name: Verify firewall services
+      include_tasks: tasks/common/health.yml
+      vars:
+        health_check_nginx: true
+        health_check_docker: true

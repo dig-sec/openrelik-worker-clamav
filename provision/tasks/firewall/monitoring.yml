@@ -1,0 +1,86 @@
+---
+# Network monitoring and packet capture tasks
+- name: Create packet capture directory
+  file:
+    path: /var/log/utgard/pcap
+    state: directory
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Create tcpdump systemd service
+  copy:
+    dest: /etc/systemd/system/utgard-tcpdump.service
+    mode: '0644'
+    content: |
+      [Unit]
+      Description=Utgard Lab Packet Capture
+      After=network.target
+      
+      [Service]
+      Type=simple
+      ExecStart=/usr/bin/tcpdump -i eth1 -w /var/log/utgard/pcap/lab-%%Y%%m%%d-%%H%%M%%S.pcap -G 3600 -Z root
+      Restart=always
+      RestartSec=10
+      
+      [Install]
+      WantedBy=multi-user.target
+
+- name: Enable tcpdump service
+  systemd:
+    name: utgard-tcpdump
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Configure Suricata for lab network monitoring
+  copy:
+    dest: /etc/suricata/suricata.yaml
+    mode: '0644'
+    content: |
+      %YAML 1.1
+      ---
+      vars:
+        address-groups:
+          HOME_NET: "[{{ lab_network }}]"
+          EXTERNAL_NET: "!$HOME_NET"
+      
+      default-log-dir: /var/log/suricata/
+      
+      outputs:
+        - fast:
+            enabled: yes
+            filename: fast.log
+        - eve-log:
+            enabled: yes
+            filetype: regular
+            filename: eve.json
+            types:
+              - alert
+              - http
+              - dns
+              - tls
+      
+      af-packet:
+        - interface: eth1
+          cluster-id: 99
+          cluster-type: cluster_flow
+          defrag: yes
+      
+      detect-engine:
+        - profile: medium
+        - sgh-mpm-context: auto
+        - inspection-recursion-limit: 3000
+  register: suricata_config
+
+- name: Enable Suricata service
+  systemd:
+    name: suricata
+    enabled: yes
+    state: started
+
+- name: Reload Suricata if config changed
+  systemd:
+    name: suricata
+    state: restarted
+  when: suricata_config.changed

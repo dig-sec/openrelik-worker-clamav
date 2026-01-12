@@ -234,7 +234,7 @@ vagrant scp firewall:/tmp/neko-traffic.pcap /tmp/
 
 ## Security Considerations
 
-### ✓ What Neko Protects
+### * What Neko Protects
 
 - **Container isolation** - Tor Browser runs in isolated Docker container
 - **Persistent privacy** - No data left on host system
@@ -242,7 +242,7 @@ vagrant scp firewall:/tmp/neko-traffic.pcap /tmp/
 - **Lab isolation** - Tor traffic visible only on internal network
 - **Multi-user transparency** - All actions logged/visible to admin
 
-### ⚠️ What Neko Does NOT Provide
+### WARNING:️ What Neko Does NOT Provide
 
 - **Direct anonymity from lab admins** - Lab infrastructure sees all traffic
 - **OS fingerprinting protection** - Simple containment, not hardened

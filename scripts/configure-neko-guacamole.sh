@@ -3,11 +3,17 @@
 # This adds neko as a connection through Guacamole's web interface
 # Run this after Guacamole and neko are up and running
 
-GUAC_HOST="http://localhost:18080/guacamole/rest"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=./lib/config.sh
+. "$SCRIPT_DIR/lib/config.sh"
+
+GUAC_PORT="$(utgard_config_get 'ports.guacamole' '8223')"
+NEKO_HOST="$(utgard_config_get 'lab.neko_ip' '10.20.0.40')"
+NEKO_PORT="$(utgard_config_get 'ports_internal.neko_tor' '8080')"
+
+GUAC_HOST="http://localhost:${GUAC_PORT}/guacamole/rest"
 GUAC_USERNAME="guacadmin"
 GUAC_PASSWORD="guacadmin"
-NEKO_HOST="10.20.0.40"
-NEKO_PORT="8080"
 
 # Get authentication token
 TOKEN=$(curl -s -X POST \
@@ -51,5 +57,5 @@ curl -s -X POST \
 
 echo ""
 echo "Neko connection added to Guacamole"
-echo "Access via: http://localhost:18080/guacamole/"
+echo "Access via: http://localhost:${GUAC_PORT}/guacamole/"
 echo "Connection: Neko Tor Browser"
