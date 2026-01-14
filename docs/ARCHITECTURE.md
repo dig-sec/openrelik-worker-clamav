@@ -1,22 +1,18 @@
 # Utgard Architecture
 
-## Summary
+Utgard runs lab VMs behind a firewall. Pangolin provides optional external access. All lab VMs access the internet via the firewall through Mullvad VPN egress.
 
-Utgard runs isolated lab VMs behind a dedicated firewall. External access (if needed) is handled by Pangolin, and lab egress can be forced through Mullvad VPN.
+Flow:
 
-## Network Flow
+Operator -> Pangolin (optional) -> Firewall (10.20.0.2) -> Lab VMs (10.20.0.0/24)
+Lab VMs -> Firewall -> Mullvad VPN -> Internet
 
-Operator -> Pangolin (optional) -> Firewall (10.20.0.1) -> Lab VMs (10.20.0.0/24) -> Mullvad (optional)
+Zones:
+- Host: 192.168.121.0/24 (firewall eth0)
+- Lab: 10.20.0.0/24 (firewall eth1)
+- VPN: wg0 (Mullvad egress for all lab traffic)
 
-## Zones
-
-- Host network (192.168.121.0/24): libvirt network, firewall eth0
-- Lab network (10.20.0.0/24): OpenRelik, REMnux, Neko, firewall eth1
-- VPN egress (wg0): optional Mullvad tunnel on firewall
-
-## Security Model
-
-- Default-deny nftables on the firewall
-- No direct host -> lab exposure
-- Packet capture and Suricata on lab traffic
-- Pangolin is the only internet-facing entry point (if enabled)
+Security:
+- Default-deny nftables on firewall
+- No direct host -> lab access
+- Packet capture + Suricata on lab traffic

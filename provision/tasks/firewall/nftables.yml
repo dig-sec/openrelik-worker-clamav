@@ -50,11 +50,11 @@
         chain postrouting {
           type nat hook postrouting priority 100; policy accept;
           
-          # NAT for lab traffic exiting via eth0 (no VPN)
-          oifname "eth0" ip saddr {{ lab_network }} masquerade
-          
-          # NAT for lab traffic exiting via Mullvad
+          # NAT for lab traffic exiting via Mullvad VPN (required)
           oifname "wg0" ip saddr {{ lab_network }} masquerade
+          
+          # Fallback NAT via eth0 (only if wg0 is down)
+          oifname "eth0" ip saddr {{ lab_network }} masquerade
         }
       }
   register: nft_config

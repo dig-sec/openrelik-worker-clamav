@@ -2,24 +2,14 @@
 
 ## Purpose
 
-Extracts EXIF metadata from image files using exiftool.
+Extracts EXIF metadata from images.
 
-## Deployment
-
-Included in standard OpenRelik provisioning.
-
-Manual start (if needed):
-
-```bash
-vagrant ssh openrelik -c "cd /opt/openrelik/openrelik && docker compose up -d openrelik-worker-exif"
-```
-
-## Usage
+## Use
 
 - Input: image file
-- Output: text (default) or JSON if enabled in the UI
+- Output: text (default) or JSON (if enabled)
 
-## Troubleshooting
+## Logs
 
 ```bash
 vagrant ssh openrelik -c "docker logs openrelik-worker-exif"

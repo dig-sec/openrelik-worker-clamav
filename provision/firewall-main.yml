@@ -36,6 +36,10 @@
     - name: Configure WireGuard Mullvad
       include_tasks: tasks/firewall/wireguard.yml
 
+    # DNS forwarder for lab VMs
+    - name: Configure DNS forwarder
+      include_tasks: tasks/firewall/dns.yml
+
     # NFTables firewall
     - name: Configure NFTables firewall
       include_tasks: tasks/firewall/nftables.yml

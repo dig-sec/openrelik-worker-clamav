@@ -10,21 +10,21 @@ vagrant up neko
 
 ## Access
 
-- Direct: http://localhost:8080
-- Guacamole (optional): http://localhost:18080/guacamole/
+- Direct (from host): http://10.20.0.40:8080
+- Pangolin tunnel: Configure route in Pangolin dashboard
 
-Default creds: `neko` / `admin`
+Defaults: `neko/admin`
 
-## Configuration (Optional)
+## Optional Config
 
 ```bash
 export NEKO_PASSWORD="your-password"
 export NEKO_ADMIN_PASSWORD="your-admin-password"
 ```
 
-Ports and VM resources are set in `Vagrantfile` and `provision/neko.yml`.
+Ports and VM resources are in `Vagrantfile` and `provision/neko.yml`.
 
-## Troubleshooting
+## Logs
 
 ```bash
 vagrant ssh neko

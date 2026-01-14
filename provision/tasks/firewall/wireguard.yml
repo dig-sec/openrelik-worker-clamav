@@ -58,11 +58,13 @@
     var: mullvad_verify.stdout_lines
   when: wg0_conf | length > 0 and mullvad_verify.stdout_lines is defined
 
-- name: Warn if Mullvad not configured
-  debug:
+- name: Fail if Mullvad not configured
+  fail:
     msg: |
-      WARNING: Mullvad WireGuard not configured. Neko and other services will exit directly.
-      Set MULLVAD_WG_CONF environment variable to tunnel traffic through Mullvad.
+      ERROR: Mullvad WireGuard configuration is required.
+      Lab VMs access the internet via firewall through Mullvad VPN egress.
+      Set MULLVAD_WG_CONF environment variable with your Mullvad WireGuard config.
+      See docs/wireguard/WIREGUARD-SETUP.md for setup instructions.
   when: wg0_conf | length == 0
 
 - name: Check if WireGuard config exists

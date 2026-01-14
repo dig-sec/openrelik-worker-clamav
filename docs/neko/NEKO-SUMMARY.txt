@@ -28,12 +28,7 @@ FILES CREATED (10 FILES):
    - Alternative deployment method
    - Can be used outside Vagrant
 
-3. scripts/configure-neko-guacamole.sh (1.6 KB) [EXECUTABLE]
-   - Integration script for Guacamole
-   - Adds neko as web connection in Guacamole
-   - Requires REST API access
-
-4. scripts/test-connections.sh [MODIFIED]
+3. scripts/test-connections.sh [MODIFIED]
    - Added neko connectivity tests
    - Tests VM status, service, and port
    - Included in test summary output
@@ -126,7 +121,7 @@ FEATURES ENABLED:
 * Framework Integration
   - OpenRelik: Artifact ingestion
   - REMnux: Deep traffic analysis
-  - Guacamole: Web gateway access
+  - Pangolin: External access via tunnels
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -205,7 +200,7 @@ WHAT'S NOT PROTECTED:
 BEST PRACTICES:
   1. Monitor traffic with Suricata IDS
   2. Regular container updates
-  3. Restrict Neko access via Guacamole ACLs
+  3. Restrict Neko access via Pangolin ACLs
   4. Enable audit logging for sensitive sites
   5. Keep container separate from other analysis
 

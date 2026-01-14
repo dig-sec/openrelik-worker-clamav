@@ -2,30 +2,20 @@
 
 ## Purpose
 
-Generates SSDeep fuzzy hashes for files to find near-duplicates.
+Generates SSDeep fuzzy hashes to find near-duplicate files.
 
-## Deployment
-
-Included in standard OpenRelik provisioning.
-
-Manual start (if needed):
-
-```bash
-vagrant ssh openrelik -c "cd /opt/openrelik/openrelik && docker compose up -d openrelik-worker-ssdeep"
-```
-
-## Usage
+## Use
 
 - Input: any file (>= ~4KB recommended)
 - Output: `<filename>.ssdeep`
 
-To compare two hashes:
+Compare:
 
 ```bash
 ssdeep -s <hash1> <hash2>
 ```
 
-## Troubleshooting
+## Logs
 
 ```bash
 vagrant ssh openrelik -c "docker logs openrelik-worker-ssdeep"

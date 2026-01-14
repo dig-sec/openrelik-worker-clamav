@@ -1,6 +1,8 @@
 # WireGuard Setup
 
-## Quick Start
+Mullvad VPN egress is **required**. Lab VMs (neko, openrelik, remnux) access the internet via the firewall through Mullvad.
+
+## Setup
 
 ```bash
 ./scripts/wg-config.sh list
@@ -8,21 +10,21 @@
 ./scripts/provision.sh
 ```
 
-## Verify
+Verify:
 
 ```bash
 ./scripts/wg-config.sh current
 ./scripts/wg-config.sh test
 ```
 
-## Alternative: Direct Config
+Manual config:
 
 ```bash
 export MULLVAD_WG_CONF="$(cat /path/to/wg0.conf)"
 ./scripts/provision.sh
 ```
 
-## Troubleshooting
+Logs:
 
 ```bash
 vagrant ssh firewall

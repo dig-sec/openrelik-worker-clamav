@@ -1,5 +1,7 @@
 ---
 # Common network configuration for lab VMs
+# All VMs use static IPs assigned in Vagrantfile and route through firewall (10.20.0.2)
+
 - name: Remove eth0 default route (force all traffic through firewall)
   command: ip route del default via 192.168.121.1 dev eth0
   when: ansible_eth1 is defined
@@ -10,6 +12,29 @@
   command: ip route replace default via {{ lab_gateway }} dev eth1
   when: ansible_eth1 is defined
 
+- name: Create resolved.conf.d directory
+  file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Configure DNS to use firewall as resolver
+  copy:
+    dest: /etc/systemd/resolved.conf.d/lab-dns.conf
+    content: |
+      # Lab DNS configuration - route DNS through firewall to Mullvad
+      [Resolve]
+      DNS={{ lab_gateway }}
+      Domains=~.
+    mode: '0644'
+  register: dns_config
+
+- name: Restart systemd-resolved for DNS changes
+  systemd:
+    name: systemd-resolved
+    state: restarted
+  when: dns_config.changed
+
 - name: Configure netplan to disable eth0 default gateway
   blockinfile:
     path: /etc/netplan/50-vagrant.yaml
@@ -19,12 +44,16 @@
           dhcp4: yes
           dhcp4-overrides:
             use-routes: false
+            use-dns: false
           routes:
             - to: 192.168.121.0/24
               via: 192.168.121.1
         eth1:
           addresses:
             - {{ ansible_eth1.ipv4.address }}/24
+          nameservers:
+            addresses:
+              - {{ lab_gateway }}
           routes:
             - to: default
               via: {{ lab_gateway }}

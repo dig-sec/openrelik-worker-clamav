@@ -1,14 +1,27 @@
-# Pangolin External Access Setup
+# Pangolin External Access
 
-## Goal
+All external access to the Utgard lab is through Pangolin tunnels. There are no open ports on the lab network.
 
-Publish Utgard services over HTTPS without a client VPN.
+Pangolin repo: https://github.com/fosrl/pangolin
 
-## Requirements
+## Network Architecture
 
-- Linux host with Docker + Docker Compose
-- DNS record pointing to the Pangolin host
-- Network route from Pangolin host to 10.20.0.0/24
+```
+Internet → Pangolin Server (your-domain.com)
+              ↓ (secure tunnel)
+           Firewall (10.20.0.2)
+              ↓ (lab network)
+           Lab VMs
+```
+
+## Static IP Assignments
+
+| VM        | IP Address    | Services                     |
+|-----------|---------------|------------------------------|
+| Firewall  | 10.20.0.2     | Gateway, DNS, Mullvad VPN    |
+| REMnux    | 10.20.0.20    | RDP (3389), Analysis tools   |
+| OpenRelik | 10.20.0.30    | API (8710), UI (8711)        |
+| Neko      | 10.20.0.40    | Tor (8080), Chromium (8090)  |
 
 ## Setup
 
@@ -20,7 +33,7 @@ mkdir -p pangolin/config/traefik pangolin/config/db \
 Update:
 - `pangolin/config/traefik/traefik_config.yml` (email)
 - `pangolin/config/traefik/dynamic_config.yml` (domain)
-- `pangolin/config/config.yml` (Pangolin settings)
+- `pangolin/config/config.yml` (settings)
 
 Start:
 
@@ -35,9 +48,21 @@ Initial setup:
 https://your-domain.com/auth/initial-setup
 ```
 
-## Add Services (Pangolin UI)
+## Service Endpoints (Pangolin UI)
 
-- OpenRelik UI: `http://10.20.0.30:8711`
-- OpenRelik API: `http://10.20.0.30:8710`
-- Neko Tor: `http://10.20.0.40:8080`
-- Neko Chromium: `http://10.20.0.40:8090`
+Configure these targets in Pangolin:
+
+| Service           | Target URL                    | Notes                    |
+|-------------------|-------------------------------|--------------------------|
+| OpenRelik UI      | `http://10.20.0.30:8711`      | Web interface            |
+| OpenRelik API     | `http://10.20.0.30:8710`      | REST API                 |
+| Neko Tor Browser  | `http://10.20.0.40:8080`      | WebRTC browser session   |
+| Neko Chromium     | `http://10.20.0.40:8090`      | WebRTC browser session   |
+| REMnux RDP        | `tcp://10.20.0.20:3389`       | RDP tunnel (Newt client) |
+
+## Access Methods
+
+1. **Web Services** (OpenRelik, Neko): Direct HTTPS via Pangolin subdomain
+2. **RDP** (REMnux): Use Pangolin Newt client for TCP tunnel
+
+No SSH port forwarding, VPN clients, or Guacamole needed.

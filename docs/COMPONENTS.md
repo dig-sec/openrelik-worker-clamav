@@ -1,25 +1,26 @@
 # Utgard Components
 
-This is a quick map of core services, where they live, and how you reach them.
+## Network Architecture
 
-| Component | Purpose | Location | Access |
-| --- | --- | --- | --- |
-| Firewall/Gateway | Isolation, routing, capture, IDS, optional VPN egress | VM: firewall (10.20.0.1) | `vagrant ssh firewall` |
-| OpenRelik | Forensics UI/API + workers | VM: openrelik (10.20.0.30) | Pangolin route |
-| REMnux | Analyst workstation | VM: remnux (10.20.0.20) | RDP via Guacamole or SSH |
-| Neko Tor Browser | Remote Tor browser | VM: neko (10.20.0.40) | Pangolin route |
-| Pangolin | External access + TLS routing | `pangolin/` | https://your-domain.com |
-| WireGuard | VPN egress (optional) | `wireguard/` | `./scripts/wg-config.sh` |
+All lab VMs route internet traffic through the firewall via **Mullvad VPN** (required).
 
-## Key Files
+```
+Lab VMs (10.20.0.0/24) -> Firewall (10.20.0.2) -> Mullvad (wg0) -> Internet
+```
 
-- Vagrantfile: VM definitions
-- network.xml: libvirt network
-- provision/*.yml: Ansible playbooks
-- services/*: Docker compose templates
+## Components
 
-## Docs
+| Component | Location | Access |
+| --- | --- | --- |
+| Firewall/Gateway | VM: firewall (10.20.0.2) | `vagrant ssh firewall` |
+| OpenRelik | VM: openrelik (10.20.0.30) | Pangolin tunnel or SSH |
+| REMnux | VM: remnux (10.20.0.20) | RDP or SSH |
+| Neko Browsers | VM: neko (10.20.0.40) | Pangolin tunnel |
+| Pangolin | `pangolin/` | https://your-domain.com |
+| WireGuard | `wireguard/` | `./scripts/wg-config.sh` |
 
-- Pangolin: docs/PANGOLIN-ACCESS.md
-- Neko: docs/neko/NEKO-SETUP.md
-- WireGuard: docs/wireguard/WIREGUARD-SETUP.md
+## Access Methods
+
+- **SSH**: `vagrant ssh <vm-name>` from host
+- **Pangolin**: External access via tunnels (requires setup)
+- **RDP**: Direct RDP to REMnux (10.20.0.20:3389) from host network

@@ -2,27 +2,16 @@
 
 ## Purpose
 
-Scans Velociraptor collection archives (zip/tar.*) with ClamAV and writes JSON reports.
+Scans Velociraptor collection archives and writes JSON reports.
 
-## Deployment
-
-Included in standard OpenRelik provisioning. No extra steps required.
-
-Manual start (if needed):
-
-```bash
-vagrant ssh openrelik -c "cd /opt/openrelik/openrelik && docker compose up -d openrelik-worker-clamav"
-```
-
-## Usage
+## Use
 
 - Task: `scan_velociraptor_collection`
-- Input: Velociraptor collection archive
-- Output:
-  - `*_clamav.json` (full report)
-  - `*_clamav_infected.json` (detections only)
+- Input: zip/tar.* collection
+- Output: `*_clamav.json`, `*_clamav_infected.json`
 
-## Notes
+## Logs
 
-- Use the infected-only report for quick triage.
-- Rebuild the worker image to refresh signatures.
+```bash
+vagrant ssh openrelik -c "docker logs openrelik-worker-clamav"
+```

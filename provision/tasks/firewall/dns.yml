@@ -1,0 +1,73 @@
+---
+# DNS forwarder for lab VMs - forwards to Mullvad DNS via VPN tunnel
+
+- name: Install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
+
+- name: Stop systemd-resolved to free port 53
+  systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: no
+
+- name: Configure dnsmasq as DNS forwarder
+  copy:
+    dest: /etc/dnsmasq.conf
+    mode: '0644'
+    content: |
+      # Utgard Lab DNS Forwarder
+      # Listen on lab interface only
+      interface=eth1
+      bind-interfaces
+      
+      # Forward DNS queries to Mullvad DNS (via wg0 tunnel)
+      server=10.64.0.1
+      
+      # Don't read /etc/resolv.conf (we manage our own upstream)
+      no-resolv
+      
+      # Cache DNS queries
+      cache-size=1000
+      
+      # Log queries for debugging (disable in production)
+      # log-queries
+      
+      # Don't forward short names
+      domain-needed
+      bogus-priv
+  register: dnsmasq_config
+
+- name: Configure local DNS resolution for firewall
+  copy:
+    dest: /etc/resolv.conf
+    mode: '0644'
+    content: |
+      # Firewall DNS - use Mullvad DNS directly
+      nameserver 10.64.0.1
+
+- name: Enable and start dnsmasq
+  systemd:
+    name: dnsmasq
+    state: started
+    enabled: yes
+    daemon_reload: yes
+
+- name: Restart dnsmasq if config changed
+  systemd:
+    name: dnsmasq
+    state: restarted
+  when: dnsmasq_config.changed
+
+- name: Verify DNS forwarding works
+  shell: |
+    # Test DNS resolution through dnsmasq
+    dig @127.0.0.1 ghcr.io +short | head -1
+  register: dns_test
+  changed_when: false
+  failed_when: false
+
+- name: Display DNS test result
+  debug:
+    msg: "DNS test for ghcr.io: {{ dns_test.stdout | default('FAILED') }}"

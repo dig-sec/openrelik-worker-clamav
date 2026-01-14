@@ -1,14 +1,11 @@
 # Neko Tor Browser
 
-Neko provides a shared Tor Browser session in the lab network.
+Shared Tor Browser session on the lab network.
 
-## Access
-
+Access:
 - Direct: http://localhost:8080
-- Via Pangolin: https://your-domain.com/<route>
+- Pangolin: https://your-domain.com/<route>
 
-Default creds: `neko` / `admin`
+Defaults: `neko/admin`
 
-## Setup
-
-See docs/neko/NEKO-SETUP.md for provisioning and configuration.
+Setup: docs/neko/NEKO-SETUP.md

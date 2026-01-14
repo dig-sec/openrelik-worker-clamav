@@ -65,16 +65,16 @@ ACCESS PATHS
 ════════════════════════════════════════════════════════════════════════════════
 
 1. DIRECT ACCESS
-   ├─ URL: http://localhost:8080
+   ├─ URL: http://10.20.0.40:8080 (from host)
    ├─ Protocol: WebRTC (low-latency video)
    ├─ Auth: neko / admin
    └─ Use case: Direct browser control
 
-2. VIA GUACAMOLE GATEWAY (after configuration)
-   ├─ URL: http://localhost:18080/guacamole/
-   ├─ Connection: "Neko Tor Browser"
-   ├─ Protocol: HTTP proxy
-   └─ Use case: Web gateway access
+2. VIA PANGOLIN TUNNEL (after configuration)
+   ├─ URL: https://your-domain.com (Pangolin route)
+   ├─ Connection: Configure in Pangolin dashboard
+   ├─ Protocol: HTTPS tunnel
+   └─ Use case: External access
 
 3. INTERNAL LAB ACCESS
    ├─ From Firewall: curl http://10.20.0.40:8080
@@ -137,9 +137,8 @@ FILES & STRUCTURE
 
 utgard/
 ├── provision/
-│   └── neko.yml                    ← Ansible playbook for neko
+│   └── neko-main.yml               ← Ansible playbook for neko
 ├── scripts/
-│   ├── configure-neko-guacamole.sh ← Setup neko in Guacamole
 │   ├── test-connections.sh         ← UPDATED: neko tests
 │   └── [other scripts]
 ├── docs/
@@ -192,11 +191,10 @@ Default: neko / admin
 INTEGRATION CHECKLIST
 ════════════════════════════════════════════════════════════════════════════════
 
-[DONE] Ansible playbook created          (provision/neko.yml)
+[DONE] Ansible playbook created          (provision/neko-main.yml)
 [DONE] Vagrantfile updated               (neko VM block added)
 [DONE] Docker configuration created      (services/neko/docker-compose.neko.yml)
 [DONE] Test script updated              (test-connections.sh)
-[DONE] Guacamole configuration created  (configure-neko-guacamole.sh)
 [DONE] Documentation created             (4 docs files)
 [DONE] Quick reference created           (scripts/NEKO-QUICKREF.sh)
 [DONE] Backward compatible               (no breaking changes)
