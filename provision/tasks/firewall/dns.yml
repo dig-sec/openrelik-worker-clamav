@@ -12,6 +12,10 @@
     state: stopped
     enabled: no
 
+- name: Choose upstream DNS server
+  set_fact:
+    dns_upstream: "{{ '10.64.0.1' if (wg0_conf | length > 0) else '1.1.1.1' }}"
+
 - name: Configure dnsmasq as DNS forwarder
   copy:
     dest: /etc/dnsmasq.conf
@@ -22,8 +26,8 @@
       interface=eth1
       bind-interfaces
       
-      # Forward DNS queries to Mullvad DNS (via wg0 tunnel)
-      server=10.64.0.1
+      # Forward DNS queries to upstream resolver
+      server={{ dns_upstream }}
       
       # Don't read /etc/resolv.conf (we manage our own upstream)
       no-resolv
@@ -44,8 +48,8 @@
     dest: /etc/resolv.conf
     mode: '0644'
     content: |
-      # Firewall DNS - use Mullvad DNS directly
-      nameserver 10.64.0.1
+      # Firewall DNS - use upstream resolver
+      nameserver {{ dns_upstream }}
 
 - name: Enable and start dnsmasq
   systemd:

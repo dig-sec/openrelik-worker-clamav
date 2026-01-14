@@ -50,3 +50,5 @@ pangolin/config/key
 pangolin/config/letsencrypt/
 pangolin/config/logs/
 pangolin/config/traefik/logs/
+
+archive/

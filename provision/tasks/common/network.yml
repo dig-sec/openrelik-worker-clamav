@@ -22,7 +22,7 @@
   copy:
     dest: /etc/systemd/resolved.conf.d/lab-dns.conf
     content: |
-      # Lab DNS configuration - route DNS through firewall to Mullvad
+      # Lab DNS configuration - route DNS through firewall
       [Resolve]
       DNS={{ lab_gateway }}
       Domains=~.

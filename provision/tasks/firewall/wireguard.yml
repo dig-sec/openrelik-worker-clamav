@@ -65,7 +65,12 @@
       Lab VMs access the internet via firewall through Mullvad VPN egress.
       Set MULLVAD_WG_CONF environment variable with your Mullvad WireGuard config.
       See docs/wireguard/WIREGUARD-SETUP.md for setup instructions.
-  when: wg0_conf | length == 0
+  when: wg0_conf | length == 0 and require_mullvad | bool
+
+- name: Warn if Mullvad not configured
+  debug:
+    msg: "Mullvad WireGuard not configured; lab egress will use eth0 and public DNS."
+  when: wg0_conf | length == 0 and not require_mullvad | bool
 
 - name: Check if WireGuard config exists
   stat:
