@@ -23,7 +23,7 @@ services:
         condition: service_healthy
     # WireGuard server reachable at external IP for remote clients
     command:
-      - --reachableAt=https://dig-sec.com:51820
+      - --reachableAt=https://utgard.dig-sec.com:51820
       - --generateAndSaveKeyTo=/var/config/key
       - --remoteConfig=http://pangolin:3001/api/v1/
     volumes:

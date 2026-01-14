@@ -32,6 +32,6 @@
       debug:
         msg:
           - "REMnux VM ready!"
-          - "Access via Guacamole: http://localhost:8223/"
+          - "Access via SSH: vagrant ssh remnux"
           - "RDP: 10.20.0.20:3389"
           - "For full REMnux tools: sudo remnux install --mode=addon --user=vagrant --dev"

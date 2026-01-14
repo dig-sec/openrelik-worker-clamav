@@ -97,15 +97,6 @@ else
     echo -e "${YELLOW}[WARNING] Not reachable${NC}"
 fi
 
-# Check Guacamole (via firewall vagrant IP)
-FIREWALL_VAGRANT_IP="192.168.121.53"
-echo -n "  Guacamole (${FIREWALL_VAGRANT_IP}:8080)... "
-if curl -fsS --connect-timeout 2 "http://${FIREWALL_VAGRANT_IP}:8080/guacamole/" >/dev/null 2>&1; then
-    echo -e "${GREEN}[OK] Reachable${NC}"
-else
-    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
-fi
-
 # Check Neko Tor
 echo -n "  Neko Tor (${NEKO_IP}:8080)... "
 if curl -fsS --connect-timeout 2 "http://${NEKO_IP}:8080/" >/dev/null 2>&1; then
@@ -142,7 +133,6 @@ echo ""
 echo -e "${BLUE}Service URLs (lab network only):${NC}"
 echo "  - OpenRelik UI: http://${OPENRELIK_IP}:8711/"
 echo "  - OpenRelik API: http://${OPENRELIK_IP}:8710/api/v1/docs/"
-echo "  - Guacamole: http://${FIREWALL_VAGRANT_IP}:8080/guacamole/"
 echo "  - Neko Tor: http://${NEKO_IP}:8080/"
 echo "  - Neko Chromium: http://${NEKO_IP}:8090/"
 echo ""

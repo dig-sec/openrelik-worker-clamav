@@ -12,7 +12,6 @@
     remnux_ip: "{{ remnux_ip | default('10.20.0.20') }}"
     neko_ip: "{{ neko_ip | default('10.20.0.40') }}"
     host_network_cidr: "{{ host_network_cidr | default('192.168.121.0/24') }}"
-    enable_guacamole: "{{ enable_guacamole | default(true) }}"
   
   tasks:
     - name: Update apt cache
@@ -41,9 +40,8 @@
     - name: Configure NFTables firewall
       include_tasks: tasks/firewall/nftables.yml
 
-    # Guacamole (RDP/SSH gateway)
-    - name: Setup Guacamole
-      include_tasks: tasks/firewall/guacamole.yml
+    # NOTE: Guacamole removed - using Pangolin for remote access
+    # See docs/PANGOLIN-ACCESS.md for setup instructions
 
     # Network monitoring
     - name: Setup monitoring

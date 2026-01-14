@@ -26,7 +26,6 @@ host:
 service_ports:
   openrelik_ui: 8711
   openrelik_api: 8710
-  guacamole: 8080
   neko_tor: 8080
   neko_chromium: 8090
 
@@ -34,8 +33,7 @@ service_ports:
 # Feature Flags
 #------------------------------------------------------------------------------
 features:
-  # Enable Guacamole web-based remote desktop gateway
-  enable_guacamole: true
+  # NOTE: Guacamole removed - using Pangolin for remote access
   
   # Enable extra OpenRelik workers (ClamAV, YARA, etc.)
   enable_extra_workers: false

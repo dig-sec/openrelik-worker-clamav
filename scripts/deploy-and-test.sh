@@ -84,7 +84,6 @@ if [ $TEST_RESULT -eq 0 ]; then
     echo -e "${GREEN}Services are ready (lab network only):${NC}"
     echo "  • OpenRelik UI: http://${OPENRELIK_IP}:8711/"
     echo "  • OpenRelik API: http://${OPENRELIK_IP}:8710/api/v1/docs/"
-    echo "  • Guacamole: http://${FIREWALL_IP}:8080/guacamole/"
     echo "  • Neko Tor: http://${NEKO_IP}:8080/"
     echo "  • Neko Chromium: http://${NEKO_IP}:8090/"
     echo ""

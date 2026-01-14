@@ -19,8 +19,7 @@ remnux_ip = dig_config(cfg, 'lab', 'remnux_ip', default: '10.20.0.20')
 neko_ip = dig_config(cfg, 'lab', 'neko_ip', default: '10.20.0.40')
 host_network_cidr = dig_config(cfg, 'host', 'network_cidr', default: '192.168.121.0/24')
 
-# Feature flags
-enable_guacamole = dig_config(cfg, 'features', 'enable_guacamole', default: true)
+# Feature flags (Guacamole removed - using Pangolin for remote access)
 enable_extra_workers = dig_config(cfg, 'features', 'enable_extra_workers', default: false)
 openrelik_run_migrations = dig_config(cfg, 'features', 'openrelik_run_migrations', default: true)
 
@@ -80,8 +79,7 @@ Vagrant.configure("2") do |config|
         openrelik_ip: openrelik_ip,
         remnux_ip: remnux_ip,
         neko_ip: neko_ip,
-        host_network_cidr: host_network_cidr,
-        enable_guacamole: enable_guacamole
+        host_network_cidr: host_network_cidr
       }
     end
   end

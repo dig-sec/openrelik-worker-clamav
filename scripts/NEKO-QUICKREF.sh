@@ -115,18 +115,6 @@ sudo ls -la /var/lib/docker/volumes/neko_neko_data/_data/
 
 
 # ============================================
-# GUACAMOLE INTEGRATION
-# ============================================
-
-# After provisioning, add neko to Guacamole:
-./scripts/configure-neko-guacamole.sh
-
-# Then access via:
-# http://localhost:18080/guacamole/
-# Connection: "Neko Tor Browser"
-
-
-# ============================================
 # SECURITY & MONITORING
 # ============================================
 

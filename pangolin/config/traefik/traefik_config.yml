@@ -24,7 +24,7 @@ certificatesResolvers:
     acme:
       httpChallenge:
         entryPoint: web
-      email: admin@dig-sec.com
+      email: admin@utgard.dig-sec.com
       storage: "/letsencrypt/acme.json"
       caServer: "https://acme-v02.api.letsencrypt.org/directory"
 
