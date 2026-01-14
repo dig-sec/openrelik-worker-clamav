@@ -3,7 +3,11 @@
   hosts: all
   become: yes
   vars:
-    lab_gateway: "10.20.0.1"
+    # Network settings (passed from config.yml via Vagrantfile)
+    lab_gateway: "{{ lab_gateway | default('10.20.0.2') }}"
+    lab_ip: "{{ lab_ip | default('10.20.0.20') }}"
+    
+    # Feature flags
     remnux_install_cli: false
   
   tasks:

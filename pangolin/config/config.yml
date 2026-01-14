@@ -1,0 +1,58 @@
+# Pangolin Configuration for Utgard Lab
+# See: https://docs.pangolin.net/self-host/configuration
+
+# Server settings
+server:
+  host: "0.0.0.0"
+  port: 3000
+
+# Database configuration
+database:
+  host: "localhost"
+  port: 5432
+  name: "pangolin"
+  user: "pangolin"
+  password: "change-me"
+
+# Lab services to be published via Pangolin
+# These are automatically discovered and published to Gerbil VPN routes
+services:
+  - name: "openrelik-ui"
+    description: "OpenRelik Forensic Analysis UI"
+    target: "http://10.20.0.30:8711"
+    public: true
+
+  - name: "openrelik-api"
+    description: "OpenRelik REST API"
+    target: "http://10.20.0.30:8710"
+    public: true
+
+  - name: "neko-tor"
+    description: "Neko - Tor Browser"
+    target: "http://10.20.0.40:8080"
+    public: true
+
+  - name: "neko-chromium"
+    description: "Neko - Chromium Browser"
+    target: "http://10.20.0.40:8090"
+    public: true
+
+  - name: "guacamole"
+    description: "Guacamole Remote Desktop Gateway"
+    target: "http://10.20.0.1:8080/guacamole"
+    public: true
+
+# Authentication settings
+auth:
+  type: "local"
+  # Set initial admin credentials on first run
+  # Change these after first login!
+  admin:
+    username: "admin"
+    password: "change-me"
+
+# Logging
+logging:
+  level: "info"
+  format: "json"
+

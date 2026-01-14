@@ -10,25 +10,29 @@ def dig_config(cfg, *keys, default: nil)
   keys.reduce(cfg) { |acc, key| acc.is_a?(Hash) ? acc[key] : nil } || default
 end
 
+# Lab network configuration
 lab_network = dig_config(cfg, 'lab', 'network', default: '10.20.0.0/24')
-lab_gateway_ip = dig_config(cfg, 'lab', 'gateway_ip', default: '10.20.0.1')
+lab_netmask = dig_config(cfg, 'lab', 'netmask', default: '255.255.255.0')
+lab_firewall_ip = dig_config(cfg, 'lab', 'firewall_ip', default: '10.20.0.2')
 openrelik_ip = dig_config(cfg, 'lab', 'openrelik_ip', default: '10.20.0.30')
 remnux_ip = dig_config(cfg, 'lab', 'remnux_ip', default: '10.20.0.20')
 neko_ip = dig_config(cfg, 'lab', 'neko_ip', default: '10.20.0.40')
+host_network_cidr = dig_config(cfg, 'host', 'network_cidr', default: '192.168.121.0/24')
 
-port_landing = dig_config(cfg, 'ports', 'landing', default: 8220)
-port_openrelik_ui = dig_config(cfg, 'ports', 'openrelik_ui', default: 8221)
-port_openrelik_api = dig_config(cfg, 'ports', 'openrelik_api', default: 8222)
-port_guacamole = dig_config(cfg, 'ports', 'guacamole', default: 8223)
-port_neko_tor = dig_config(cfg, 'ports', 'neko_tor', default: 8224)
-port_neko_chromium = dig_config(cfg, 'ports', 'neko_chromium', default: 8225)
-port_neko_webrtc_tor = dig_config(cfg, 'ports', 'neko_webrtc_tor', default: 8081)
-port_neko_webrtc_chromium = dig_config(cfg, 'ports', 'neko_webrtc_chromium', default: 8091)
+# Feature flags
+enable_guacamole = dig_config(cfg, 'features', 'enable_guacamole', default: true)
+enable_extra_workers = dig_config(cfg, 'features', 'enable_extra_workers', default: false)
+openrelik_run_migrations = dig_config(cfg, 'features', 'openrelik_run_migrations', default: true)
 
+# Credentials (env vars take precedence)
+neko_password = ENV['NEKO_PASSWORD'] || dig_config(cfg, 'credentials', 'neko_password', default: 'neko')
+neko_admin_password = ENV['NEKO_ADMIN_PASSWORD'] || dig_config(cfg, 'credentials', 'neko_admin_password', default: 'admin')
+
+# VM Resources
 fw_mem = dig_config(cfg, 'resources', 'firewall', 'memory', default: 2048).to_i
 fw_cpus = dig_config(cfg, 'resources', 'firewall', 'cpus', default: 2).to_i
-or_mem = dig_config(cfg, 'resources', 'openrelik', 'memory', default: 4096).to_i
-or_cpus = dig_config(cfg, 'resources', 'openrelik', 'cpus', default: 2).to_i
+or_mem = dig_config(cfg, 'resources', 'openrelik', 'memory', default: 8192).to_i
+or_cpus = dig_config(cfg, 'resources', 'openrelik', 'cpus', default: 4).to_i
 rx_mem = dig_config(cfg, 'resources', 'remnux', 'memory', default: 4096).to_i
 rx_cpus = dig_config(cfg, 'resources', 'remnux', 'cpus', default: 2).to_i
 nk_mem = dig_config(cfg, 'resources', 'neko', 'memory', default: 3072).to_i
@@ -51,20 +55,15 @@ Vagrant.configure("2") do |config|
     # eth0: vagrant-libvirt network (public/host access) - auto-configured
     # eth1: utgard-lab network (NAT mode for compatibility) - auto-created by Vagrant
     fw.vm.network "private_network",
-      ip: lab_gateway_ip,
+      ip: lab_firewall_ip,
       netmask: "255.255.255.0",
       libvirt__network_name: "utgard-lab",
       libvirt__dhcp_enabled: false,
       libvirt__forward_mode: "nat",
       auto_config: true
 
-    # Forward all services through firewall (8220+ safe for browsers)
-    fw.vm.network "forwarded_port", guest: port_landing, host: port_landing  # Landing page
-    fw.vm.network "forwarded_port", guest: port_openrelik_ui, host: port_openrelik_ui  # OpenRelik UI
-    fw.vm.network "forwarded_port", guest: port_openrelik_api, host: port_openrelik_api  # OpenRelik API
-    fw.vm.network "forwarded_port", guest: port_guacamole, host: port_guacamole  # Guacamole
-    fw.vm.network "forwarded_port", guest: port_neko_tor, host: port_neko_tor  # Neko Tor Browser
-    fw.vm.network "forwarded_port", guest: port_neko_chromium, host: port_neko_chromium  # Neko Chromium
+    # NOTE: Port forwarding removed - use Pangolin for external access
+    # See docs/PANGOLIN-ACCESS.md for setup instructions
 
     # Copy firewall playbook, tasks, and supporting files
     fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/firewall-main.yml"), destination: "/tmp/firewall-main.yml"
@@ -75,19 +74,14 @@ Vagrant.configure("2") do |config|
       ansible.provisioning_path = "/tmp"
       ansible.compatibility_mode = "2.0"
       ansible.extra_vars = {
-        # Provide full WireGuard config via environment
         wg0_conf: ENV['MULLVAD_WG_CONF'] || '',
         lab_network: lab_network,
-        lab_gateway_ip: lab_gateway_ip,
+        firewall_ip: lab_firewall_ip,
         openrelik_ip: openrelik_ip,
         remnux_ip: remnux_ip,
         neko_ip: neko_ip,
-        port_landing: port_landing,
-        port_openrelik_ui: port_openrelik_ui,
-        port_openrelik_api: port_openrelik_api,
-        port_guacamole: port_guacamole,
-        port_neko_tor: port_neko_tor,
-        port_neko_chromium: port_neko_chromium
+        host_network_cidr: host_network_cidr,
+        enable_guacamole: enable_guacamole
       }
     end
   end
@@ -125,9 +119,10 @@ Vagrant.configure("2") do |config|
         openrelik_client_id: ENV['OPENRELIK_CLIENT_ID'] || '',
         openrelik_client_secret: ENV['OPENRELIK_CLIENT_SECRET'] || '',
         openrelik_allowlist: (ENV['OPENRELIK_ALLOWLIST'] || '').split(',').map(&:strip).reject(&:empty?),
-        lab_gateway: lab_gateway_ip,
-        port_openrelik_api: port_openrelik_api,
-        port_openrelik_ui: port_openrelik_ui
+        lab_gateway: lab_firewall_ip,
+        lab_ip: openrelik_ip,
+        enable_extra_workers: enable_extra_workers,
+        openrelik_run_migrations: openrelik_run_migrations
       }
     end
   end
@@ -158,7 +153,8 @@ Vagrant.configure("2") do |config|
       ansible.provisioning_path = "/tmp"
       ansible.compatibility_mode = "2.0"
       ansible.extra_vars = {
-        lab_gateway: lab_gateway_ip
+        lab_gateway: lab_firewall_ip,
+        lab_ip: remnux_ip
       }
     end
   end
@@ -181,9 +177,7 @@ Vagrant.configure("2") do |config|
       libvirt__dhcp_enabled: false,
       auto_config: true
 
-    # Forward neko broadcast port to host (WebRTC)
-    nk.vm.network "forwarded_port", guest: port_neko_webrtc_tor, host: port_neko_webrtc_tor  # Neko Tor WebRTC broadcast
-    nk.vm.network "forwarded_port", guest: port_neko_webrtc_chromium, host: port_neko_webrtc_chromium  # Neko Chromium WebRTC broadcast
+    # Access WebRTC via Pangolin (no host port forwarding)
 
     # Copy neko playbook and tasks
     nk.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/neko-main.yml"), destination: "/tmp/neko-main.yml"
@@ -193,10 +187,10 @@ Vagrant.configure("2") do |config|
       ansible.provisioning_path = "/tmp"
       ansible.compatibility_mode = "2.0"
       ansible.extra_vars = {
-        neko_password: ENV['NEKO_PASSWORD'] || 'neko',
-        neko_admin_password: ENV['NEKO_ADMIN_PASSWORD'] || 'admin',
-        lab_gateway: lab_gateway_ip,
-        neko_webrtc_ip: ENV['NEKO_WEBRTC_IP'] || ''
+        neko_password: neko_password,
+        neko_admin_password: neko_admin_password,
+        lab_gateway: lab_firewall_ip,
+        neko_webrtc_ip: ENV['NEKO_WEBRTC_IP'] || neko_ip
       }
     end
   end

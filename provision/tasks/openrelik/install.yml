@@ -16,25 +16,21 @@
   # Run as root to avoid docker socket permission issues during initial setup
   become_user: "root"
 
-- name: Point UI to firewall-proxied API endpoint
+- name: Configure OpenRelik API endpoint for direct access
   lineinfile:
     path: "{{ openrelik_install_dir }}/openrelik/.env"
     regexp: '^OPENRELIK_SERVER_URL='
-    line: "OPENRELIK_SERVER_URL=http://localhost:{{ port_openrelik_api }}"
+    line: "OPENRELIK_SERVER_URL=http://{{ ansible_default_ipv4.address }}:{{ openrelik_api_port_internal }}"
   notify: Restart OpenRelik services
 
 - name: Bind OpenRelik API to lab network
-  lineinfile:
-    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
-    regexp: '^\s*-\s*127\.0\.0\.1:{{ openrelik_api_port_internal }}:{{ openrelik_api_port_internal }}'
-    line: "      - 0.0.0.0:{{ openrelik_api_port_internal }}:{{ openrelik_api_port_internal }}"
+  shell: |
+    sed -i 's/127\.0\.0\.1:{{ openrelik_api_port_internal }}:{{ openrelik_api_port_internal }}/0.0.0.0:{{ openrelik_api_port_internal }}:{{ openrelik_api_port_internal }}/' "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
   notify: Restart OpenRelik services
 
 - name: Bind OpenRelik UI to lab network
-  lineinfile:
-    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
-    regexp: '^\s*-\s*127\.0\.0\.1:{{ openrelik_ui_port_internal }}:{{ openrelik_ui_port_internal }}'
-    line: "      - 0.0.0.0:{{ openrelik_ui_port_internal }}:{{ openrelik_ui_port_internal }}"
+  shell: |
+    sed -i 's/127\.0\.0\.1:{{ openrelik_ui_port_internal }}:{{ openrelik_ui_port_internal }}/0.0.0.0:{{ openrelik_ui_port_internal }}:{{ openrelik_ui_port_internal }}/' "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
   notify: Restart OpenRelik services
 
 - name: Ensure OpenRelik config directory exists

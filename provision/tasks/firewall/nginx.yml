@@ -38,12 +38,32 @@
         listen {{ port_openrelik_ui }};
         server_name _;
         
+        client_max_body_size 100M;
+        
         location / {
           proxy_pass http://{{ openrelik_ip }}:8711;
           proxy_set_header Host $host;
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_buffering off;
+          proxy_request_buffering off;
+          proxy_http_version 1.1;
+          
+          # Ensure proper cookie handling
+          proxy_cookie_path / /;
+          
+          # Disable gzip compression on proxy responses
+          proxy_set_header Accept-Encoding "gzip";
+        }
+        
+        # Cache settings for static assets
+        location /assets {
+          proxy_pass http://{{ openrelik_ip }}:8711;
+          proxy_set_header Host $host;
+          proxy_cache_valid 200 1h;
+          proxy_cache_bypass $http_pragma $http_authorization;
+          add_header Cache-Control "public, max-age=3600";
         }
       }
       
@@ -52,12 +72,32 @@
         listen {{ port_openrelik_api }};
         server_name _;
         
+        # CORS headers - use the requesting origin
+        add_header 'Access-Control-Allow-Origin' $http_origin always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD' always;
+        add_header 'Access-Control-Allow-Headers' 'Content-Type,Authorization,X-Requested-With' always;
+        add_header 'Access-Control-Allow-Credentials' 'true' always;
+        
         location / {
+          # Handle CORS preflight requests
+          if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' $http_origin always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD' always;
+            add_header 'Access-Control-Allow-Headers' 'Content-Type,Authorization,X-Requested-With' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+            add_header 'Content-Type' 'text/plain charset=UTF-8';
+            add_header 'Content-Length' '0';
+            return 204;
+          }
+          
           proxy_pass http://{{ openrelik_ip }}:8710;
-          proxy_set_header Host $host;
+          proxy_set_header Host localhost:{{ port_openrelik_api }};
           proxy_set_header X-Real-IP $remote_addr;
           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
           proxy_set_header X-Forwarded-Proto $scheme;
+          proxy_set_header X-Forwarded-Host localhost:{{ port_openrelik_api }};
+          proxy_set_header X-Forwarded-Port {{ port_openrelik_api }};
+          proxy_http_version 1.1;
         }
       }
 
@@ -141,6 +181,13 @@
         error_log /var/log/nginx/error.log;
         
         gzip on;
+        
+        # Map to detect CORS requests
+        map $request_method $cors_method {
+          OPTIONS 1;
+          default 0;
+        }
+        
         include /etc/nginx/sites-enabled/*;
       }
   notify: Restart nginx

@@ -8,18 +8,21 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=./lib/config.sh
 . "$SCRIPT_DIR/lib/config.sh"
+# shellcheck source=./lib/common.sh
+. "$SCRIPT_DIR/lib/common.sh"
 
 VAGRANT_PARALLEL_FLAG=""
 if [ "${UTGARD_PARALLEL:-1}" -ne 0 ]; then
   VAGRANT_PARALLEL_FLAG="--parallel"
 fi
 
-PORT_LANDING="$(utgard_config_get 'ports.landing' '8220')"
-PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
-PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
-PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
-PORT_NEKO_TOR="$(utgard_config_get 'ports.neko_tor' '8224')"
-PORT_NEKO_CHROMIUM="$(utgard_config_get 'ports.neko_chromium' '8225')"
+# Lab network IPs (direct access)
+FIREWALL_IP="$(utgard_config_get 'lab.firewall_ip' '10.20.0.2')"
+OPENRELIK_IP="$(utgard_config_get 'lab.openrelik_ip' '10.20.0.30')"
+NEKO_IP="$(utgard_config_get 'lab.neko_ip' '10.20.0.40')"
+
+# Load Mullvad config if available
+utgard_load_mullvad_conf
 cd "$ROOT_DIR"
 
 echo "╔════════════════════════════════════════════════════╗"
@@ -69,15 +72,17 @@ echo
 
 echo "Step 4: Provision VMs with vagrant (under user 'loki')"
 if id -u loki >/dev/null 2>&1; then
-  sudo -u loki -H bash -lc "VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up firewall && VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up ${VAGRANT_PARALLEL_FLAG} openrelik remnux neko"
+  sudo -u loki -H env MULLVAD_WG_CONF="${MULLVAD_WG_CONF:-}" VAGRANT_DEFAULT_PROVIDER=libvirt \
+    bash -lc "vagrant up firewall && vagrant up ${VAGRANT_PARALLEL_FLAG} openrelik remnux neko"
 else
   echo "[WARNING] User 'loki' not found; running vagrant up as current user"
-  VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up firewall && VAGRANT_DEFAULT_PROVIDER=libvirt vagrant up ${VAGRANT_PARALLEL_FLAG} openrelik remnux neko
+  MULLVAD_WG_CONF="${MULLVAD_WG_CONF:-}" VAGRANT_DEFAULT_PROVIDER=libvirt \
+    vagrant up firewall && vagrant up ${VAGRANT_PARALLEL_FLAG} openrelik remnux neko
 fi
 echo "[OK] VMs are provisioning (first run can take 30-45 min)"
 echo ""
 echo "VMs being provisioned:"
-echo "  - firewall (2GB RAM, 2 CPU) - reverse proxy & network gateway"
+echo "  - firewall (2GB RAM, 2 CPU) - network gateway & Mullvad WireGuard"
 echo "  - openrelik (4GB RAM, 2 CPU) - artifact analysis"
 echo "  - remnux (4GB RAM, 2 CPU) - malware analysis tools"
 echo "  - neko (3GB RAM, 2 CPU) - Tor & Chromium browsers"
@@ -92,12 +97,13 @@ fi
 echo
 echo "[DONE] Rebuild finished!"
 echo ""
-echo "Access services:"
-echo "  - Landing Page: http://localhost:${PORT_LANDING}/"
-echo "  - Neko Tor Browser: http://localhost:${PORT_NEKO_TOR}/"
-echo "  - Neko Chromium Browser: http://localhost:${PORT_NEKO_CHROMIUM}/"
-echo "  - OpenRelik UI: http://localhost:${PORT_OPENRELIK_UI}/"
-echo "  - OpenRelik API: http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
-echo "  - Guacamole Web: http://localhost:${PORT_GUACAMOLE}/guacamole/"
+echo "Access services (lab network only 10.20.0.0/24):"
+echo "  - OpenRelik UI: http://${OPENRELIK_IP}:8711/"
+echo "  - OpenRelik API: http://${OPENRELIK_IP}:8710/api/v1/docs/"
+echo "  - Guacamole: http://${FIREWALL_IP}:8080/guacamole/"
+echo "  - Neko Tor: http://${NEKO_IP}:8080/"
+echo "  - Neko Chromium: http://${NEKO_IP}:8090/"
+echo ""
+echo "External access: use Pangolin routes configured in docs/PANGOLIN-ACCESS.md."
 echo ""
 echo "For more info: ./scripts/check-status.sh"

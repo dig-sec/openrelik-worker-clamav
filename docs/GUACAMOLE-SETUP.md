@@ -6,41 +6,47 @@ Guacamole provides browser-based access to the lab VMs (RDP/SSH) through the fir
 
 - URL: http://localhost:18080/guacamole/
 - Default login: `guacadmin` / `guacadmin`
-- Change the admin password on first login.
+- **Important**: Change the admin password on first login
 
-## Create Connections
+## Pre-Configured Connections
 
-From the Guacamole admin UI:
+The following connections are automatically created during provisioning:
 
-1. Go to Settings → Connections → New Connection.
-2. Create the following connections (examples below).
+### REMnux Analyst VM (RDP)
+- **Protocol**: RDP
+- **Hostname**: `10.20.0.20:3389`
+- **Username**: `vagrant`
+- **Password**: `vagrant`
+- **Features**: Desktop environment with analysis tools
 
-### REMnux (RDP)
+### OpenRelik Server (SSH)
+- **Protocol**: SSH
+- **Hostname**: `10.20.0.30:22`
+- **Username**: `vagrant`
+- **Password**: `vagrant`
+- **Use case**: Server management, Docker operations
 
-- Name: `remnux-rdp`
-- Protocol: RDP
-- Hostname: `10.20.0.20`
-- Port: `3389`
-- Username: `vagrant`
-- Password: `vagrant`
+### Firewall Gateway (SSH)
+- **Protocol**: SSH
+- **Hostname**: `10.20.0.1:22`
+- **Username**: `vagrant`
+- **Password**: `vagrant`
+- **Use case**: Network monitoring, firewall management
 
-### OpenRelik (SSH)
+### Neko Browser VM (SSH)
+- **Protocol**: SSH
+- **Hostname**: `10.20.0.40:22`
+- **Username**: `vagrant`
+- **Password**: `vagrant`
+- **Use case**: Container management
 
-- Name: `openrelik-ssh`
-- Protocol: SSH
-- Hostname: `10.20.0.30`
-- Port: `22`
-- Username: `vagrant`
-- Password: `vagrant`
+## Manual Connection Setup
 
-### Firewall (SSH)
+To add additional connections manually:
 
-- Name: `firewall-ssh`
-- Protocol: SSH
-- Hostname: `10.20.0.1`
-- Port: `22`
-- Username: `vagrant`
-- Password: `vagrant`
+1. Go to Settings → Connections → New Connection
+2. Configure with lab network IPs (10.20.0.x)
+3. Use `vagrant` / `vagrant` for credentials
 
 ## Notes
 

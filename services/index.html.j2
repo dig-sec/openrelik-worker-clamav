@@ -172,42 +172,31 @@
 </head>
 <body>
     <div class="container">
-        <section class="hero">
-            <h1>Utgard Lab</h1>
-            <p>Contained malware analysis and forensics workspace. All lab traffic routes through a hardened firewall layer.</p>
-            <div class="status">
-                <div class="status-chip">Isolated Network</div>
-                <div class="status-chip">Default Deny</div>
-                <div class="status-chip">Packet Capture</div>
-                <div class="status-chip">IDS Monitoring</div>
-            </div>
-        </section>
-
         <section class="grid">
             <div class="card">
                 <h3>OpenRelik UI</h3>
                 <p>Artifact indexing, triage, and analysis console.</p>
-                <a href="http://localhost:{{ port_openrelik_ui }}/">http://localhost:{{ port_openrelik_ui }}/</a>
+                <a href="http://{{ openrelik_ip }}:8711/">http://{{ openrelik_ip }}:8711/</a>
             </div>
             <div class="card">
                 <h3>OpenRelik API</h3>
                 <p>REST API docs for automation and integrations.</p>
-                <a href="http://localhost:{{ port_openrelik_api }}/api/v1/docs/">http://localhost:{{ port_openrelik_api }}/api/v1/docs/</a>
+                <a href="http://{{ openrelik_ip }}:8710/api/v1/docs/">http://{{ openrelik_ip }}:8710/api/v1/docs/</a>
             </div>
             <div class="card">
                 <h3>Guacamole</h3>
                 <p>Browser-based RDP/SSH gateway into REMnux.</p>
-                <a href="http://localhost:{{ port_guacamole }}/guacamole/">http://localhost:{{ port_guacamole }}/guacamole/</a>
+                <a href="http://{{ firewall_ip }}:8080/guacamole/">http://{{ firewall_ip }}:8080/guacamole/</a>
             </div>
             <div class="card">
                 <h3>Neko Tor Browser</h3>
                 <p>Shared Tor browser session for malware web analysis.</p>
-                <a href="http://localhost:{{ port_neko_tor }}/">http://localhost:{{ port_neko_tor }}/</a>
+                <a href="http://{{ neko_ip }}:8080/">http://{{ neko_ip }}:8080/</a>
             </div>
             <div class="card">
                 <h3>Neko Chromium</h3>
                 <p>Shared Chromium session for clean browsing workflows.</p>
-                <a href="http://localhost:{{ port_neko_chromium }}/">http://localhost:{{ port_neko_chromium }}/</a>
+                <a href="http://{{ neko_ip }}:8090/">http://{{ neko_ip }}:8090/</a>
             </div>
         </section>
 
@@ -218,7 +207,6 @@
             <div class="line">Neko: neko / admin</div>
         </section>
 
-        <div class="footer">Utgard // isolated analysis mesh</div>
     </div>
 </body>
 </html>

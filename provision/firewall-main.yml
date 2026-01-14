@@ -1,27 +1,18 @@
 ---
-- name: Configure multi-homed firewall with reverse proxy
+- name: Configure firewall gateway
   hosts: all
   become: yes
   vars:
+    # All variables are passed from Vagrantfile/config.yml
+    # These defaults allow standalone playbook testing
     wg0_conf: ""
-    lab_network: "10.20.0.0/24"
-    lab_gateway_ip: "10.20.0.1"
-    openrelik_ip: "10.20.0.30"
-    remnux_ip: "10.20.0.20"
-    neko_ip: "10.20.0.40"
-    port_landing: 8220
-    port_openrelik_ui: 8221
-    port_openrelik_api: 8222
-    port_guacamole: 8223
-    port_neko_tor: 8224
-    port_neko_chromium: 8225
-    enable_guacamole: true
-  
-  handlers:
-    - name: Restart nginx
-      systemd:
-        name: nginx
-        state: restarted
+    lab_network: "{{ lab_network | default('10.20.0.0/24') }}"
+    firewall_ip: "{{ firewall_ip | default('10.20.0.2') }}"
+    openrelik_ip: "{{ openrelik_ip | default('10.20.0.30') }}"
+    remnux_ip: "{{ remnux_ip | default('10.20.0.20') }}"
+    neko_ip: "{{ neko_ip | default('10.20.0.40') }}"
+    host_network_cidr: "{{ host_network_cidr | default('192.168.121.0/24') }}"
+    enable_guacamole: "{{ enable_guacamole | default(true) }}"
   
   tasks:
     - name: Update apt cache
@@ -29,7 +20,7 @@
         update_cache: yes
         cache_valid_time: 3600
 
-    - name: Install packages for firewall and reverse proxy
+    - name: Install firewall packages
       apt:
         name:
           - curl
@@ -37,25 +28,20 @@
           - wireguard
           - nftables
           - resolvconf
-          - nginx
           - tcpdump
           - tshark
           - suricata
         state: present
 
-    # WireGuard VPN setup
-    - name: Configure WireGuard
+    # WireGuard Mullvad (outbound VPN for lab traffic)
+    - name: Configure WireGuard Mullvad
       include_tasks: tasks/firewall/wireguard.yml
 
-    # NFTables firewall rules
+    # NFTables firewall
     - name: Configure NFTables firewall
       include_tasks: tasks/firewall/nftables.yml
 
-    # Nginx reverse proxy
-    - name: Configure Nginx reverse proxy
-      include_tasks: tasks/firewall/nginx.yml
-
-    # Guacamole Docker setup
+    # Guacamole (RDP/SSH gateway)
     - name: Setup Guacamole
       include_tasks: tasks/firewall/guacamole.yml
 
@@ -63,9 +49,8 @@
     - name: Setup monitoring
       include_tasks: tasks/firewall/monitoring.yml
 
-    # Post-provision health checks
+    # Health checks
     - name: Verify firewall services
       include_tasks: tasks/common/health.yml
       vars:
-        health_check_nginx: true
         health_check_docker: true

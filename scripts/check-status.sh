@@ -15,9 +15,11 @@ YELLOW="$UTGARD_YELLOW"
 BLUE="$UTGARD_BLUE"
 NC="$UTGARD_NC" # No Color
 
-PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
-PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
-PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
+# Lab network IPs (internal access)
+FIREWALL_IP="$(utgard_config_get 'lab.firewall_ip' '10.20.0.2')"
+OPENRELIK_IP="$(utgard_config_get 'lab.openrelik_ip' '10.20.0.30')"
+REMNUX_IP="$(utgard_config_get 'lab.remnux_ip' '10.20.0.20')"
+NEKO_IP="$(utgard_config_get 'lab.neko_ip' '10.20.0.40')"
 
 utgard_banner "Utgard Lab Infrastructure Status"
 
@@ -47,7 +49,8 @@ fi
 # Check VM status
 echo ""
 echo -e "${BLUE}Virtual Machines:${NC}"
-vm_count=$(virsh list --all 2>/dev/null | grep -c utgard || echo 0)
+vm_count=$(virsh list --all 2>/dev/null | grep -c "utgard" || true)
+vm_count=${vm_count:-0}
 
 if [ "$vm_count" -eq 0 ]; then
     echo -e "  ${YELLOW}No Utgard VMs found${NC}"
@@ -74,21 +77,46 @@ else
     done
 fi
 
-# Check Docker on OpenRelik
+# Check services via internal IP access
 echo ""
-echo -e "${BLUE}Services:${NC}"
+echo -e "${BLUE}Services (lab network only):${NC}"
 
-# Try to check OpenRelik
-echo -n "  OpenRelik container... "
-if vagrant ssh openrelik -c "docker ps 2>/dev/null | grep -q openrelik" 2>/dev/null; then
-    echo -e "${GREEN}[OK] Running${NC}"
+# Check OpenRelik UI
+echo -n "  OpenRelik UI (${OPENRELIK_IP}:8711)... "
+if curl -fsS --connect-timeout 2 "http://${OPENRELIK_IP}:8711/" >/dev/null 2>&1; then
+    echo -e "${GREEN}[OK] Reachable${NC}"
 else
-    echo -e "${YELLOW}[WARNING] Not running or unreachable${NC}"
+    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
 fi
 
-# Check Guacamole Web Gateway
-echo -n "  Guacamole Web (firewall:${PORT_GUACAMOLE})... "
-if vagrant ssh firewall -c "curl -fsS http://localhost:${PORT_GUACAMOLE}/guacamole/ >/dev/null" 2>/dev/null; then
+# Check OpenRelik API
+echo -n "  OpenRelik API (${OPENRELIK_IP}:8710)... "
+if curl -fsS --connect-timeout 2 "http://${OPENRELIK_IP}:8710/api/v1/" >/dev/null 2>&1; then
+    echo -e "${GREEN}[OK] Reachable${NC}"
+else
+    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
+fi
+
+# Check Guacamole (via firewall vagrant IP)
+FIREWALL_VAGRANT_IP="192.168.121.53"
+echo -n "  Guacamole (${FIREWALL_VAGRANT_IP}:8080)... "
+if curl -fsS --connect-timeout 2 "http://${FIREWALL_VAGRANT_IP}:8080/guacamole/" >/dev/null 2>&1; then
+    echo -e "${GREEN}[OK] Reachable${NC}"
+else
+    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
+fi
+
+# Check Neko Tor
+echo -n "  Neko Tor (${NEKO_IP}:8080)... "
+if curl -fsS --connect-timeout 2 "http://${NEKO_IP}:8080/" >/dev/null 2>&1; then
+    echo -e "${GREEN}[OK] Reachable${NC}"
+else
+    echo -e "${YELLOW}[WARNING] Not reachable${NC}"
+fi
+
+# Check Neko Chromium
+echo -n "  Neko Chromium (${NEKO_IP}:8090)... "
+if curl -fsS --connect-timeout 2 "http://${NEKO_IP}:8090/" >/dev/null 2>&1; then
     echo -e "${GREEN}[OK] Reachable${NC}"
 else
     echo -e "${YELLOW}[WARNING] Not reachable${NC}"
@@ -103,22 +131,22 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}Networking:${NC}"
-
-# Get host IP for lab network
-lab_net=$(virsh net-dumpxml utgard-lab 2>/dev/null | grep -oP '<ip address="\K[^"]+' || echo "not found")
-echo "  Lab network (utgard-lab): 10.20.0.0/24"
-echo "    - Gateway IP: 10.20.0.1 (firewall)"
-echo "    - OpenRelik: 10.20.0.30"
-echo "    - REMnux: 10.20.0.20"
+echo -e "${BLUE}Network Configuration:${NC}"
+echo "  Lab network: 10.20.0.0/24 (virbr-utgard)"
+echo "    - Firewall: ${FIREWALL_IP} (lab) / ${FIREWALL_VAGRANT_IP} (host)"
+echo "    - OpenRelik: ${OPENRELIK_IP}"
+echo "    - REMnux: ${REMNUX_IP}"
+echo "    - Neko: ${NEKO_IP}"
 
 echo ""
-echo -e "${BLUE}When Services Are Up:${NC}"
-echo "  - OpenRelik UI: http://localhost:${PORT_OPENRELIK_UI}/"
-echo "  - OpenRelik API: http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
-echo "  - Guacamole Web: http://localhost:${PORT_GUACAMOLE}/guacamole/"
+echo -e "${BLUE}Service URLs (lab network only):${NC}"
+echo "  - OpenRelik UI: http://${OPENRELIK_IP}:8711/"
+echo "  - OpenRelik API: http://${OPENRELIK_IP}:8710/api/v1/docs/"
+echo "  - Guacamole: http://${FIREWALL_VAGRANT_IP}:8080/guacamole/"
+echo "  - Neko Tor: http://${NEKO_IP}:8080/"
+echo "  - Neko Chromium: http://${NEKO_IP}:8090/"
 echo ""
-echo "  Test connectivity: ./scripts/test-connections.sh"
+echo "External access is provided via Pangolin (see docs/PANGOLIN-ACCESS.md)."
 echo ""
 
 # Check if user is in libvirt group

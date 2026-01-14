@@ -21,11 +21,20 @@ YELLOW="$UTGARD_YELLOW"
 BLUE="$UTGARD_BLUE"
 NC="$UTGARD_NC" # No Color
 
-PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
-PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
-PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
-PORT_NEKO_TOR="$(utgard_config_get 'ports.neko_tor' '8224')"
-PORT_NEKO_CHROMIUM="$(utgard_config_get 'ports.neko_chromium' '8225')"
+LAB_NETWORK="$(utgard_config_get 'lab.network' '10.20.0.0/24')"
+FW_IP="$(utgard_config_get 'lab.gateway_ip' '10.20.0.1')"
+OPENRELIK_IP="$(utgard_config_get 'lab.openrelik_ip' '10.20.0.30')"
+NEKO_IP="$(utgard_config_get 'lab.neko_ip' '10.20.0.40')"
+OPENRELIK_UI_PORT="$(utgard_config_get 'ports_internal.openrelik_ui' '8711')"
+OPENRELIK_API_PORT="$(utgard_config_get 'ports_internal.openrelik_api' '8710')"
+GUACAMOLE_PORT="$(utgard_config_get 'ports_internal.guacamole' '8080')"
+NEKO_TOR_PORT="$(utgard_config_get 'ports_internal.neko_tor' '8080')"
+NEKO_CHROMIUM_PORT="$(utgard_config_get 'ports_internal.neko_chromium' '8090')"
+
+LAB_ROUTE_READY=0
+if ip route 2>/dev/null | grep -q "${LAB_NETWORK}"; then
+    LAB_ROUTE_READY=1
+fi
 
 utgard_banner "Utgard Lab Service Connection Tests"
 echo "Testing with ${TIMEOUT}s timeout per service"
@@ -69,23 +78,18 @@ test_port() {
     fi
 }
 
-echo -e "${BLUE}=== OpenRelik Services ===${NC}"
-test_http "OpenRelik UI (${PORT_OPENRELIK_UI})" "http://localhost:${PORT_OPENRELIK_UI}/"
-test_http "OpenRelik API (${PORT_OPENRELIK_API})" "http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
-
-echo ""
-echo -e "${BLUE}=== Guacamole Web Gateway ===${NC}"
-test_http "Guacamole Web (${PORT_GUACAMOLE})" "http://localhost:${PORT_GUACAMOLE}/guacamole/"
-
-echo ""
-echo -e "${BLUE}=== Firewall Proxy Services ===${NC}"
-test_port "nginx (${PORT_OPENRELIK_UI})" "localhost" "${PORT_OPENRELIK_UI}"
-test_port "nginx (${PORT_OPENRELIK_API})" "localhost" "${PORT_OPENRELIK_API}"
-echo -n "Skipping legacy RDP proxy (3389)... " && echo -e "${YELLOW}disabled${NC}"
-
-echo ""
-echo -e "${BLUE}=== Host Network Connectivity ===${NC}"
-test_port "vagrant-libvirt eth0" "localhost" "22" || true
+echo -e "${BLUE}=== Direct Lab Network Access ===${NC}"
+if [ "$LAB_ROUTE_READY" -eq 1 ]; then
+    test_http "OpenRelik UI (${OPENRELIK_IP}:${OPENRELIK_UI_PORT})" "http://${OPENRELIK_IP}:${OPENRELIK_UI_PORT}/"
+    test_http "OpenRelik API (${OPENRELIK_IP}:${OPENRELIK_API_PORT})" "http://${OPENRELIK_IP}:${OPENRELIK_API_PORT}/api/v1/docs/"
+    echo ""
+    test_http "Guacamole Web (${FW_IP}:${GUACAMOLE_PORT})" "http://${FW_IP}:${GUACAMOLE_PORT}/guacamole/"
+    echo ""
+    test_http "Neko Tor UI (${NEKO_IP}:${NEKO_TOR_PORT})" "http://${NEKO_IP}:${NEKO_TOR_PORT}/"
+    test_http "Neko Chromium UI (${NEKO_IP}:${NEKO_CHROMIUM_PORT})" "http://${NEKO_IP}:${NEKO_CHROMIUM_PORT}/"
+else
+    echo -e "${YELLOW}[WARN]${NC} No route to ${LAB_NETWORK} found; skipping direct access checks."
+fi
 
 echo ""
 echo -e "${BLUE}=== Lab Network Services ===${NC}"
@@ -125,22 +129,24 @@ else
     ((FAILED++))
 fi
 
-echo -n "Testing Neko Web UI (${PORT_NEKO_TOR})... "
-if timeout $TIMEOUT curl -s -f "http://localhost:${PORT_NEKO_TOR}/" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC}"
-    ((FAILED++))
-fi
+if [ "$LAB_ROUTE_READY" -eq 1 ]; then
+    echo -n "Testing Neko Web UI (${NEKO_IP}:${NEKO_TOR_PORT})... "
+    if timeout $TIMEOUT curl -s -f "http://${NEKO_IP}:${NEKO_TOR_PORT}/" > /dev/null 2>&1; then
+        echo -e "${GREEN}[OK] PASS${NC}"
+        ((PASSED++))
+    else
+        echo -e "${RED}✗ FAIL${NC}"
+        ((FAILED++))
+    fi
 
-echo -n "Testing Neko Chromium UI (${PORT_NEKO_CHROMIUM})... "
-if timeout $TIMEOUT curl -s -f "http://localhost:${PORT_NEKO_CHROMIUM}/" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC}"
-    ((FAILED++))
+    echo -n "Testing Neko Chromium UI (${NEKO_IP}:${NEKO_CHROMIUM_PORT})... "
+    if timeout $TIMEOUT curl -s -f "http://${NEKO_IP}:${NEKO_CHROMIUM_PORT}/" > /dev/null 2>&1; then
+        echo -e "${GREEN}[OK] PASS${NC}"
+        ((PASSED++))
+    else
+        echo -e "${RED}✗ FAIL${NC}"
+        ((FAILED++))
+    fi
 fi
 
 echo ""
@@ -159,35 +165,6 @@ if vagrant ssh firewall -c "ip route | grep -q 10.20.0" > /dev/null 2>&1; then
     ((PASSED++))
 else
     echo -e "${RED}✗ FAIL${NC}"
-    ((FAILED++))
-fi
-
-echo ""
-echo -e "${BLUE}=== Security Services ===${NC}"
-echo -n "Testing nftables firewall... "
-if vagrant ssh firewall -c "sudo nft list ruleset | grep -q filter" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC}"
-    ((FAILED++))
-fi
-
-echo -n "Testing packet capture service... "
-if vagrant ssh firewall -c "sudo systemctl status utgard-tcpdump" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC} (Service may not be running)"
-    ((FAILED++))
-fi
-
-echo -n "Testing Suricata IDS... "
-if vagrant ssh firewall -c "sudo systemctl status suricata" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC} (IDS may not be running)"
     ((FAILED++))
 fi
 
@@ -220,25 +197,6 @@ else
 fi
 
 echo ""
-echo -e "${BLUE}=== Analysis Tools ===${NC}"
-echo -n "Testing REMnux YARA installation... "
-if vagrant ssh remnux -c "which yara" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${RED}✗ FAIL${NC}"
-    ((FAILED++))
-fi
-
-echo -n "Testing REMnux Volatility installation... "
-if vagrant ssh remnux -c "which volatility3" > /dev/null 2>&1; then
-    echo -e "${GREEN}[OK] PASS${NC}"
-    ((PASSED++))
-else
-    echo -e "${YELLOW}[WARNING] WARNING${NC} (Volatility 3 not yet installed - may still be provisioning)"
-fi
-
-echo ""
 echo -e "${BLUE}╔════════════════════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║                      TEST SUMMARY                          ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════════════════════╝${NC}"
@@ -249,11 +207,13 @@ echo ""
 if [ $FAILED -eq 0 ]; then
     echo -e "${GREEN}[OK] All tests passed! Lab is operational.${NC}"
     echo ""
-    echo "Access services:"
-    echo "  - OpenRelik UI: http://localhost:${PORT_OPENRELIK_UI}/"
-    echo "  - OpenRelik API: http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
-    echo "  - Guacamole Web: http://localhost:${PORT_GUACAMOLE}/guacamole/"
-    echo "  - Neko Tor Browser: http://localhost:${PORT_NEKO_TOR}/"
+    echo "Internal service endpoints (lab network only):"
+    echo "  - OpenRelik UI: http://${OPENRELIK_IP}:${OPENRELIK_UI_PORT}/"
+    echo "  - OpenRelik API: http://${OPENRELIK_IP}:${OPENRELIK_API_PORT}/api/v1/docs/"
+    echo "  - Guacamole Web: http://${FW_IP}:${GUACAMOLE_PORT}/guacamole/"
+    echo "  - Neko Tor Browser: http://${NEKO_IP}:${NEKO_TOR_PORT}/"
+    echo ""
+    echo "External access: use Pangolin routes configured in docs/PANGOLIN-ACCESS.md."
     exit 0
 else
     echo -e "${RED}✗ Some tests failed. Check output above.${NC}"

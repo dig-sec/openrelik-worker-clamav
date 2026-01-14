@@ -58,6 +58,13 @@
   register: guac_init_result
   failed_when: false
 
+- name: Copy Guacamole connection pre-configuration script
+  copy:
+    src: guacamole-connections.sql
+    dest: /opt/guacamole/initdb.d/002-connections.sql
+    mode: '0644'
+  when: enable_guacamole
+
 - name: Deploy Guacamole docker-compose file
   copy:
     dest: /opt/guacamole/docker-compose.yml

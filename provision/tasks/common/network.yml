@@ -1,12 +1,40 @@
 ---
 # Common network configuration for lab VMs
+- name: Remove eth0 default route (force all traffic through firewall)
+  command: ip route del default via 192.168.121.1 dev eth0
+  when: ansible_eth1 is defined
+  failed_when: false
+  changed_when: false
+
 - name: Set default gateway to firewall (lab network only route)
   command: ip route replace default via {{ lab_gateway }} dev eth1
   when: ansible_eth1 is defined
 
-- name: Make gateway persistent
-  lineinfile:
+- name: Configure netplan to disable eth0 default gateway
+  blockinfile:
     path: /etc/netplan/50-vagrant.yaml
-    insertafter: "eth1:"
-    line: "      routes:\n        - to: default\n          via: {{ lab_gateway }}"
-    state: present
+    marker: "# {mark} UTGARD LAB NETWORK CONFIG"
+    block: |2
+        eth0:
+          dhcp4: yes
+          dhcp4-overrides:
+            use-routes: false
+          routes:
+            - to: 192.168.121.0/24
+              via: 192.168.121.1
+        eth1:
+          addresses:
+            - {{ ansible_eth1.ipv4.address }}/24
+          routes:
+            - to: default
+              via: {{ lab_gateway }}
+    insertafter: "ethernets:"
+    create: yes
+  when: ansible_eth1 is defined
+
+- name: Apply netplan configuration
+  command: netplan apply
+  when: ansible_eth1 is defined
+  async: 10
+  poll: 0
+  ignore_errors: yes

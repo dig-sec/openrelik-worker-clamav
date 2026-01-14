@@ -10,9 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=./lib/common.sh
 . "$SCRIPT_DIR/lib/common.sh"
 
-PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
-PORT_OPENRELIK_API="$(utgard_config_get 'ports.openrelik_api' '8222')"
-PORT_GUACAMOLE="$(utgard_config_get 'ports.guacamole' '8223')"
+# Lab network IPs (internal access)
+FIREWALL_IP="$(utgard_config_get 'lab.firewall_ip' '10.20.0.2')"
+OPENRELIK_IP="$(utgard_config_get 'lab.openrelik_ip' '10.20.0.30')"
+NEKO_IP="$(utgard_config_get 'lab.neko_ip' '10.20.0.40')"
 
 RED="$UTGARD_RED"
 GREEN="$UTGARD_GREEN"
@@ -70,7 +71,7 @@ echo ""
 
 # Step 5: Run tests
 echo -e "${BLUE}Step 5: Service Testing${NC}"
-echo "Running 18+ automated connectivity tests..."
+echo "Running connectivity tests..."
 echo ""
 ./scripts/test-connections.sh
 TEST_RESULT=$?
@@ -80,17 +81,20 @@ echo -e "${BLUE}═════════════════════�
 if [ $TEST_RESULT -eq 0 ]; then
     echo -e "${GREEN}[DONE] ALL TESTS PASSED${NC}"
     echo ""
-    echo -e "${GREEN}Services are ready:${NC}"
-    echo "  • Web UI:    http://localhost:${PORT_OPENRELIK_UI}/"
-    echo "  • API:       http://localhost:${PORT_OPENRELIK_API}/api/v1/docs/"
-    echo "  • Guacamole: http://localhost:${PORT_GUACAMOLE}/guacamole/"
+    echo -e "${GREEN}Services are ready (lab network only):${NC}"
+    echo "  • OpenRelik UI: http://${OPENRELIK_IP}:8711/"
+    echo "  • OpenRelik API: http://${OPENRELIK_IP}:8710/api/v1/docs/"
+    echo "  • Guacamole: http://${FIREWALL_IP}:8080/guacamole/"
+    echo "  • Neko Tor: http://${NEKO_IP}:8080/"
+    echo "  • Neko Chromium: http://${NEKO_IP}:8090/"
+    echo ""
+    echo "External access: use Pangolin routes configured in docs/PANGOLIN-ACCESS.md."
 else
     echo -e "${RED}[ERROR] SOME TESTS FAILED${NC}"
     echo ""
     echo -e "${YELLOW}Troubleshooting:${NC}"
     echo "  1. Check lab status: ./scripts/check-status.sh"
-    echo "  2. See troubleshooting guide: docs/TROUBLESHOOTING-QUICK-FIX.md"
-    echo "  3. View detailed test output above"
+    echo "  2. View detailed test output above"
 fi
 echo -e "${BLUE}════════════════════════════════════════════════════════════${NC}"
 

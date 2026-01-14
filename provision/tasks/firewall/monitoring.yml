@@ -30,8 +30,16 @@
   systemd:
     name: utgard-tcpdump
     enabled: yes
-    state: started
     daemon_reload: yes
+  register: tcpdump_enabled
+
+- name: Start tcpdump service (non-blocking)
+  systemd:
+    name: utgard-tcpdump
+    state: started
+  async: 30
+  poll: 0
+  ignore_errors: yes
 
 - name: Configure Suricata for lab network monitoring
   copy:

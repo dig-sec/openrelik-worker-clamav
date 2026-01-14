@@ -37,6 +37,16 @@ venv/
 *.key
 settings.toml
 
+# Local config (use config.yml.example as template)
+provision/config.yml
+
 # Docker volumes/data
 data/
 volumes/
+
+# Pangolin generated data
+pangolin/config/db/
+pangolin/config/key
+pangolin/config/letsencrypt/
+pangolin/config/logs/
+pangolin/config/traefik/logs/

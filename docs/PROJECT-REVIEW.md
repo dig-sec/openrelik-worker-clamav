@@ -7,7 +7,7 @@
 - OpenRelik forensic analysis platform with 15 integrated workers
 - REMnux analyst workstation
 - Mullvad VPN for controlled internet egress
-- WireGuard VPN for remote access
+- Pangolin for external access
 - Network monitoring with packet capture and Suricata IDS
 
 ## 🎯 Session Accomplishments
@@ -104,6 +104,7 @@ The Ansible playbook now:
 │   ├── REGRIPPER-SETUP.md           Registry analysis guide
 │   ├── SSDEEP-SETUP.md              ✨ NEW - Fuzzy hashing guide
 │   ├── neko/                         Neko Tor Browser docs
+│   ├── PANGOLIN-ACCESS.md           Pangolin external access setup
 │   └── wireguard/                    WireGuard VPN docs
 │
 ├── patches/
@@ -129,6 +130,7 @@ The Ansible playbook now:
 │   ├── wg-config.sh                WireGuard configuration
 │   └── NEKO-QUICKREF.sh            Neko browser reference
 │
+├── pangolin/                         Pangolin Docker Compose templates
 ├── services/
 │   └── neko/
 │       └── docker-compose.neko.yml  Neko browser compose
@@ -148,10 +150,9 @@ cd /home/loki/git/utgard
 ```
 
 ### Access Points
-- **OpenRelik UI**: http://localhost:8711/
-- **OpenRelik API**: http://localhost:8710/api/v1/docs/
-- **Guacamole**: http://localhost:18080/guacamole/
-- **REMnux RDP**: localhost:3389
+- **OpenRelik UI**: https://your-domain.com/<route>
+- **OpenRelik API**: https://your-domain.com/<route>
+- **Guacamole**: https://your-domain.com/<route> (RDP/SSH gateway to lab VMs)
 
 ### Default Credentials
 - **Guacamole**: guacadmin / guacadmin

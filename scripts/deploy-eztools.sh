@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=./lib/config.sh
 . "$SCRIPT_DIR/lib/config.sh"
 
-PORT_OPENRELIK_UI="$(utgard_config_get 'ports.openrelik_ui' '8221')"
+OPENRELIK_IP="$(utgard_config_get 'lab.openrelik_ip' '10.20.0.30')"
 
 OPENRELIK_DIR="${OPENRELIK_DIR:-/opt/openrelik/openrelik}"
 PATCHES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../patches" && pwd)"
@@ -83,7 +83,7 @@ if docker ps | grep -q "openrelik-worker-eztools"; then
     echo "Verify with:"
     echo "   docker logs openrelik-worker-eztools"
     echo ""
-    echo "Access OpenRelik UI at: http://localhost:${PORT_OPENRELIK_UI}"
+    echo "Access OpenRelik UI at: http://${OPENRELIK_IP}:8711/"
     echo "   Tasks → New Task → Select 'EZTools' worker"
 else
     echo "[ERROR] Worker failed to start. Check logs:"

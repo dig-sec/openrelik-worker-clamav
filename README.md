@@ -13,37 +13,46 @@ This lab provides a secure, isolated environment for analyzing malicious softwar
 
 ### Network Architecture
 ```
-┌─────────────────────────────────────────────────┐
-│ Host Machine                                     │
-│   Access: localhost:8221/8222 (OpenRelik)      │
-│           localhost:8223/guacamole (Guacamole) │
-│           localhost:8224 (Neko Tor Browser)     │
-├─────────────────────────────────────────────────┤
-│ Firewall VM (10.20.0.1)                        │
-│   - nginx reverse proxy                         │
-│   - nftables firewall (default deny)            │
-│   - WireGuard → Mullvad VPN                     │
-│   - Packet capture + Suricata IDS               │
-├─────────────────────────────────────────────────┤
-│ Isolated Lab Network (10.20.0.0/24)            │
-│                                                  │
-│  OpenRelik (10.20.0.30)        REMnux (10.20.0.20) │
-│  - Docker containers           - Full REMnux dist │
-│  - Forensics analysis          - RDP enabled     │
-│  - Internet via firewall       - Analysis tools  │
-│                                                  │
-│  Neko Tor Browser (10.20.0.40)                  │
-│  - WebRTC Tor Browser session                    │
-│  - Internet via firewall                         │
-└─────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│ OPERATOR                                                         │
+│                                                                  │
+│   Browser ──────► Pangolin (https://your-domain.com)             │
+└────────────────────────│─────────────────────────────────────────┘
+                         │ HTTPS
+┌────────────────────────│─────────────────────────────────────────┐
+│ PANGOLIN HOST          │                                         │
+│   Traefik + Pangolin + Gerbil                                   │
+│   Routes to lab services via DNS + Pangolin rules                │
+└────────────────────────│─────────────────────────────────────────┘
+                         │
+┌────────────────────────│─────────────────────────────────────────┐
+│ FIREWALL VM            │                                         │
+│   eth0 ◄───────────────┘  (192.168.121.x)                       │
+│   eth1 ─────────────────► 10.20.0.1 (Lab Gateway)               │
+│   wg0 ──────────────────► Mullvad VPN (outbound)                │
+│   nftables, packet capture                                      │
+└──────────────────────────────────────────────────────────────────┘
+                         │ Lab Network (10.20.0.0/24)
+         ┌───────────────┼───────────────┬─────────────────┐
+         ▼               ▼               ▼                 ▼
+   ┌───────────┐  ┌───────────┐  ┌───────────┐     ┌───────────┐
+   │ OpenRelik │  │  REMnux   │  │   Neko    │     │  (Future) │
+   │ 10.20.0.30│  │ 10.20.0.20│  │ 10.20.0.40│     │ 10.20.0.x │
+   │ :8710 API │  │  Analysis │  │ :8080 Tor │     │           │
+   │ :8711 UI  │  │   Tools   │  │ :8090 Chr │     │           │
+   └───────────┘  └───────────┘  └───────────┘     └───────────┘
+         │               │               │
+         └───────────────┴───────────────┘
+                         │
+                  Firewall wg0 ──► Mullvad VPN ──► Internet
 ```
 
 ### Security Principles
 - **Complete isolation**: Lab VMs have NO direct internet access from the host
-- **Controlled egress**: All traffic routes through firewall (optionally via Mullvad VPN)
+- **Pangolin access**: External access is routed through Pangolin with TLS
+- **Controlled egress**: All lab traffic routes through firewall → Mullvad VPN
 - **Network monitoring**: Full packet capture + IDS on all lab traffic
 - **Default deny**: nftables blocks everything except explicit allows
-- **Reverse proxy only**: No direct lab VM access from host
 - **DNS logging**: All DNS queries logged for C2 analysis
 - **Ephemeral VMs**: Easy destroy/rebuild for clean state
 
@@ -109,23 +118,23 @@ This will:
 
 **First run takes ~15-25 minutes** (base tools only; REMnux CLI install is disabled by default on Ubuntu 22.04).
 
-### 5. Access Services
+### 5. Configure Pangolin
 
-- **Guacamole Web Gateway**: http://localhost:8223/guacamole/ (login: `guacadmin/guacadmin`, routed via nginx)
-- **OpenRelik UI**: http://localhost:8221/
-- **OpenRelik API**: http://localhost:8222/api/v1/docs/
-- **Neko Tor Browser**: http://localhost:8224/ (login: `neko/admin`)
-  
+Use Pangolin for external access. See [docs/PANGOLIN-ACCESS.md](docs/PANGOLIN-ACCESS.md) for deployment and routing setup.
 
-Authentication:
-- **Guacamole**: Default login `guacadmin/guacadmin` (change after first login). Use Guacamole to access RDP/SSH sessions via a web browser—no RDP client required.
-- **OpenRelik (local)**: username `admin`, password `admin` (seeded automatically when OAuth is not configured)
+### 6. Access Services
 
-**Guacamole** provides browser-based access to REMnux RDP and SSH to all VMs. Configure connections from the Guacamole admin interface after login.
+Once Pangolin is configured, access services via your domain:
 
-See [docs/GUACAMOLE-SETUP.md](docs/GUACAMOLE-SETUP.md) for Guacamole setup and usage.
+| Service           | URL                          | Credentials              |
+|-------------------|------------------------------|--------------------------|
+| OpenRelik UI      | https://your-domain.com/<openrelik-route> | admin / admin      |
+| OpenRelik API     | https://your-domain.com/<openrelik-api-route> | -        |
+| Neko Tor Browser  | https://your-domain.com/<neko-tor-route> | neko / admin        |
+| Neko Chromium     | https://your-domain.com/<neko-chromium-route> | neko / admin |
+| Guacamole         | https://your-domain.com/<guacamole-route> | guacadmin / guacadmin |
 
-Component-by-component overview: see [docs/COMPONENTS.md](docs/COMPONENTS.md).
+For Pangolin setup, see [docs/PANGOLIN-ACCESS.md](docs/PANGOLIN-ACCESS.md).
 
 ## Helper Commands
 
@@ -201,18 +210,20 @@ vagrant provision firewall
 
 ### Can't access OpenRelik UI
 
-Check port forwarding and nginx:
+Check Pangolin routing and service reachability:
 ```bash
-vagrant port firewall
-vagrant ssh firewall -c "sudo systemctl status nginx"
+cd pangolin
+sudo docker compose ps
+sudo docker compose logs -f --tail=200
 vagrant ssh openrelik -c "cd /opt/openrelik/openrelik && docker compose ps"
 ```
 
 ### Guacamole not reachable
 
-Verify nginx and containers:
+Verify Pangolin routes and firewall containers:
 ```bash
-vagrant ssh firewall -c "sudo systemctl status nginx"
+cd pangolin
+sudo docker compose ps
 vagrant ssh firewall -c "docker ps | grep guacamole"
 ```
 
@@ -232,14 +243,14 @@ tail -f /var/log/syslog
 * **IDS Monitoring**: Suricata IDS analyzing all lab traffic  
 * **DNS Logging**: All DNS queries logged with nftables for C2 analysis  
 * **Firewall Protection**: nftables default-deny with explicit allow rules  
-* **Reverse Proxy**: No direct lab VM access, only via firewall proxies  
+* **Pangolin Access**: No direct lab VM access, services published via Pangolin  
 * **SSH Restrictions**: SSH access limited to vagrant-libvirt network only  
 
 ## Malware Analysis Workflow
 
 1. **Prepare**: Start lab with `./scripts/start-lab.sh`
-2. **Transfer Sample**: Upload malware to OpenRelik via UI (localhost:8221)
-3. **Analyze**: Use REMnux via Guacamole (localhost:8223/guacamole)
+2. **Transfer Sample**: Upload malware to OpenRelik via Pangolin route
+3. **Analyze**: Use REMnux via Guacamole through Pangolin route
 4. **Monitor**: Watch network activity in firewall logs
 5. **Extract IOCs**: Use OpenRelik to index and search artifacts
 6. **Review**: Check packet captures in `/var/log/pcaps/` on firewall
@@ -252,6 +263,8 @@ utgard/
 ├── Vagrantfile              # VM definitions and network topology
 ├── scripts/start-lab.sh     # Helper script to start lab
 ├── README.md                # This file
+├── pangolin/                # Pangolin Docker Compose templates
+├── docs/PANGOLIN-ACCESS.md  # Pangolin external access setup
 ├── docs/GUACAMOLE-SETUP.md  # Guacamole setup and access guide
 ├── INCIDENT-RESPONSE.md     # Security incident procedures
 └── provision/

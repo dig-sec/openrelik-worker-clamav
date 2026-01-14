@@ -3,16 +3,25 @@
   hosts: all
   become: yes
   vars:
+    # Installation settings
     neko_install_dir: "/opt/neko"
     neko_user: "vagrant"
+    
+    # Service ports
     neko_port: 8080
     neko_broadcast_port: 8081
     neko_chromium_port: 8090
     neko_chromium_broadcast_port: 8091
-    neko_webrtc_ip: ""
-    neko_password: "neko"
-    neko_admin_password: "admin"
-    lab_gateway: "10.20.0.1"
+    
+    # WebRTC IP (passed from config.yml via Vagrantfile)
+    neko_webrtc_ip: "{{ neko_webrtc_ip | default('') }}"
+    
+    # Credentials (passed from config.yml via Vagrantfile)
+    neko_password: "{{ neko_password | default('neko') }}"
+    neko_admin_password: "{{ neko_admin_password | default('admin') }}"
+    
+    # Network settings (passed from config.yml via Vagrantfile)
+    lab_gateway: "{{ lab_gateway | default('10.20.0.2') }}"
   
   tasks:
     # Network configuration

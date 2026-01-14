@@ -3,19 +3,28 @@
   hosts: all
   become: yes
   vars:
+    # Installation settings
     openrelik_install_dir: "/opt/openrelik"
     openrelik_user: "vagrant"
-    openrelik_client_id: ""
-    openrelik_client_secret: ""
-    openrelik_allowlist: []
-    lab_gateway: "10.20.0.1"
-    lab_ip: "10.20.0.30"
+    
+    # OAuth credentials (passed from Vagrantfile or env)
+    openrelik_client_id: "{{ openrelik_client_id | default('') }}"
+    openrelik_client_secret: "{{ openrelik_client_secret | default('') }}"
+    openrelik_allowlist: "{{ openrelik_allowlist | default([]) }}"
+    
+    # Network settings (passed from config.yml via Vagrantfile)
+    lab_gateway: "{{ lab_gateway | default('10.20.0.2') }}"
+    lab_ip: "{{ lab_ip | default('10.20.0.30') }}"
+    
+    # Service ports
     openrelik_api_port_internal: 8710
     openrelik_ui_port_internal: 8711
-    port_openrelik_api: 8222
-    port_openrelik_ui: 8221
-    enable_extra_workers: false
-    openrelik_run_migrations: true
+    
+    # Feature flags (passed from config.yml)
+    enable_extra_workers: "{{ enable_extra_workers | default(false) }}"
+    openrelik_run_migrations: "{{ openrelik_run_migrations | default(true) }}"
+    
+    # Container registry credentials
     ghcr_username: ""
     ghcr_token: ""
   

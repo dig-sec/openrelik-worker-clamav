@@ -3,7 +3,7 @@
 Use this as a quick map of each service, where it lives in the repo, and how to access or operate it. Detailed setup and troubleshooting for specific services live in their dedicated docs.
 
 ## Firewall / Gateway
-- Purpose: Isolation, routing, NAT, nftables default-deny, optional Mullvad WireGuard egress, reverse proxy for OpenRelik and Guacamole, packet capture + Suricata IDS.
+- Purpose: Isolation, routing, NAT, nftables default-deny, optional Mullvad WireGuard egress, packet capture + Suricata IDS.
 - VM: firewall (10.20.0.1)
 - Playbook: provision/firewall.yml
 - Access: `vagrant ssh firewall`
@@ -15,7 +15,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - VM: openrelik (10.20.0.30)
 - Playbook: provision/openrelik.yml
 - Install path: /opt/openrelik/openrelik
-- Access: UI http://localhost:8221/ ; API http://localhost:8222/api/v1/docs/ (through firewall reverse proxy)
+- Access: Published via Pangolin routes.
 - Auth: local admin/admin by default, or Google OAuth via env vars `OPENRELIK_CLIENT_ID`, `OPENRELIK_CLIENT_SECRET`, `OPENRELIK_ALLOWLIST`.
 - Helper scripts inside VM: `openrelik-start`, `openrelik-stop`, `openrelik-logs`.
 
@@ -29,7 +29,7 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 ## Guacamole
 - Purpose: Browser-based RDP/SSH gateway to lab VMs.
 - Location: Runs on firewall VM via Docker (optional, enabled by default in firewall playbook).
-- Access: http://localhost:8223/guacamole/ (reverse proxied)
+- Access: Published via Pangolin routes.
 - Default credentials: guacadmin/guacadmin (change on first login).
 - Setup guide: docs/GUACAMOLE-SETUP.md
 
@@ -37,7 +37,13 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - Purpose: Remote multi-user Tor Browser session for .onion research.
 - Compose: services/neko/docker-compose.neko.yml
 - Docs: docs/neko/NEKO-README.md (overview), docs/neko/NEKO-SETUP.md (full guide), docs/neko/NEKO-INTEGRATION.md (change summary), docs/neko/NEKO-ARCHITECTURE.txt (topology), docs/neko/NEKO-SUMMARY.txt (file manifest)
-- Access: http://localhost:8224 (reverse proxied via firewall nginx; credentials in setup doc). Guacamole integration script: scripts/configure-neko-guacamole.sh. Quickref: scripts/NEKO-QUICKREF.sh.
+- Access: Published via Pangolin routes. Guacamole integration script: scripts/configure-neko-guacamole.sh. Quickref: scripts/NEKO-QUICKREF.sh.
+
+## Pangolin
+- Purpose: External access layer for lab services with TLS and routing.
+- Location: `pangolin/` (Docker Compose + Traefik).
+- Access: https://your-domain.com (configure routes in Pangolin UI).
+- Setup guide: docs/PANGOLIN-ACCESS.md
 
 ## Mullvad WireGuard
 - Purpose: VPN egress for the lab; enforced at firewall when configured.
@@ -58,11 +64,11 @@ Use this as a quick map of each service, where it lives in the repo, and how to 
 - Firewall reverse proxy template: provision/firewall.yml (nginx section)
 - Example settings: provision/settings.toml.example
 
-## Access Map (Host → Lab)
-- OpenRelik UI/API: localhost:8221 / localhost:8222
-- Guacamole: localhost:8223/guacamole
-- Neko: localhost:8224 (Tor Browser, reverse proxied)
-- SSH (via Guacamole or direct host network): firewall 10.20.0.1, remnux 10.20.0.20, openrelik 10.20.0.30
+## Access Map (External → Lab)
+- OpenRelik UI/API: Pangolin route (configured in Pangolin UI)
+- Guacamole: Pangolin route
+- Neko: Pangolin route (Tor + Chromium)
+- SSH: via Guacamole or direct lab network access from the firewall
 
 ## Operational Notes
 - All lab traffic routes through the firewall; keep Mullvad configured for real malware detonation.
