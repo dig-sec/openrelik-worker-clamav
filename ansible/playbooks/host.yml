@@ -1,0 +1,12 @@
+---
+- name: Provision local host services
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    common_configure_network: false
+
+  roles:
+    - common       # Base tools + Docker
+    - headscale    # Headscale (Tailscale control server)
+    - openrelik    # Run OpenRelik on host via Docker

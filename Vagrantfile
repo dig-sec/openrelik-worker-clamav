@@ -3,7 +3,7 @@
 
 require 'yaml'
 
-config_path = File.join(File.dirname(__FILE__), "provision/config.yml")
+config_path = File.join(File.dirname(__FILE__), "config.yml")
 cfg = File.exist?(config_path) ? YAML.load_file(config_path) : {}
 
 def dig_config(cfg, *keys, default: nil)
@@ -16,43 +16,36 @@ lab_netmask = dig_config(cfg, 'lab', 'netmask', default: '255.255.255.0')
 lab_firewall_ip = dig_config(cfg, 'lab', 'firewall_ip', default: '10.20.0.2')
 openrelik_ip = dig_config(cfg, 'lab', 'openrelik_ip', default: '10.20.0.30')
 remnux_ip = dig_config(cfg, 'lab', 'remnux_ip', default: '10.20.0.20')
-neko_ip = dig_config(cfg, 'lab', 'neko_ip', default: '10.20.0.40')
-pangolin_ip = dig_config(cfg, 'lab', 'pangolin_ip', default: '10.20.0.50')
-host_network_cidr = dig_config(cfg, 'host', 'network_cidr', default: '192.168.121.0/24')
 
-# Feature flags (Guacamole removed - using Pangolin for remote access)
-enable_extra_workers = dig_config(cfg, 'features', 'enable_extra_workers', default: false)
+# Service ports
+openrelik_ui_port = dig_config(cfg, 'service_ports', 'openrelik_ui', default: 8711).to_i
+openrelik_api_port = dig_config(cfg, 'service_ports', 'openrelik_api', default: 8710).to_i
+
+# Feature flags
 openrelik_run_migrations = dig_config(cfg, 'features', 'openrelik_run_migrations', default: true)
+openrelik_workers_enabled = dig_config(cfg, 'features', 'enable_extra_workers', default: true)
+enable_wireguard = dig_config(cfg, 'features', 'enable_wireguard', default: true)
 
-# Pangolin configuration
-pangolin_enabled = dig_config(cfg, 'pangolin', 'enabled', default: true)
-pangolin_domain = dig_config(cfg, 'pangolin', 'domain', default: 'utgard.dig-sec.com')
-pangolin_bind_ip = dig_config(cfg, 'pangolin', 'bind_ip', default: '')
-pangolin_acme_email = dig_config(cfg, 'pangolin', 'acme_email', default: 'admin@utgard.dig-sec.com')
-pangolin_secret = dig_config(cfg, 'pangolin', 'secret', default: 'utgard-lab-secret-key-change-me-in-production')
-pangolin_install_dir = dig_config(cfg, 'pangolin', 'install_dir', default: '/opt/pangolin')
+# WireGuard endpoint
+wg_endpoint = ENV['WG_ENDPOINT'] || dig_config(cfg, 'wireguard', 'endpoint', default: 'se-mma-wg-002')
 
-# Credentials (env vars take precedence)
-neko_password = ENV['NEKO_PASSWORD'] || dig_config(cfg, 'credentials', 'neko_password', default: 'neko')
-neko_admin_password = ENV['NEKO_ADMIN_PASSWORD'] || dig_config(cfg, 'credentials', 'neko_admin_password', default: 'admin')
+# Credentials
+openrelik_client_id = ENV['OPENRELIK_CLIENT_ID'] || dig_config(cfg, 'credentials', 'openrelik_client_id', default: '')
+openrelik_client_secret = ENV['OPENRELIK_CLIENT_SECRET'] || dig_config(cfg, 'credentials', 'openrelik_client_secret', default: '')
 
 # VM Resources
 fw_mem = dig_config(cfg, 'resources', 'firewall', 'memory', default: 2048).to_i
 fw_cpus = dig_config(cfg, 'resources', 'firewall', 'cpus', default: 2).to_i
-or_mem = dig_config(cfg, 'resources', 'openrelik', 'memory', default: 8192).to_i
-or_cpus = dig_config(cfg, 'resources', 'openrelik', 'cpus', default: 4).to_i
+or_mem = dig_config(cfg, 'resources', 'openrelik', 'memory', default: 4096).to_i
+or_cpus = dig_config(cfg, 'resources', 'openrelik', 'cpus', default: 2).to_i
 rx_mem = dig_config(cfg, 'resources', 'remnux', 'memory', default: 4096).to_i
 rx_cpus = dig_config(cfg, 'resources', 'remnux', 'cpus', default: 2).to_i
-nk_mem = dig_config(cfg, 'resources', 'neko', 'memory', default: 3072).to_i
-nk_cpus = dig_config(cfg, 'resources', 'neko', 'cpus', default: 2).to_i
-pg_mem = dig_config(cfg, 'resources', 'pangolin', 'memory', default: 3072).to_i
-pg_cpus = dig_config(cfg, 'resources', 'pangolin', 'cpus', default: 2).to_i
 
 Vagrant.configure("2") do |config|
-  # Global: disable default synced folder (avoid NFS issues on libvirt)
+  # Disable default synced folder
   config.vm.synced_folder ".", "/vagrant", disabled: true
 
-  # Firewall / Gateway VM (Multi-homed)
+  # Firewall / Gateway VM
   config.vm.define "firewall" do |fw|
     fw.vm.box = "generic/ubuntu2204"
     fw.vm.hostname = "utgard-firewall"
@@ -62,49 +55,35 @@ Vagrant.configure("2") do |config|
       lv.cpus = fw_cpus
     end
 
-    # eth0: vagrant-libvirt network (public/host access) - auto-configured
-    # eth1: utgard-lab network (NAT mode for compatibility) - auto-created by Vagrant
+    # Lab network
     fw.vm.network "private_network",
       ip: lab_firewall_ip,
-      netmask: "255.255.255.0",
+      netmask: lab_netmask,
       libvirt__network_name: "utgard-lab",
       libvirt__dhcp_enabled: false,
       libvirt__forward_mode: "nat",
       auto_config: true
 
-    # Port forwarding for Pangolin access from the network
-    fw.vm.network "forwarded_port", guest: 443, host: 8443, host_ip: "0.0.0.0", gateway_ports: true
-    fw.vm.network "forwarded_port", guest: 80, host: 8080, host_ip: "0.0.0.0", gateway_ports: true
-    fw.vm.network "forwarded_port", guest: 51820, host: 51820, host_ip: "0.0.0.0", gateway_ports: true, protocol: "udp"
-    fw.vm.network "forwarded_port", guest: 21820, host: 21820, host_ip: "0.0.0.0", gateway_ports: true, protocol: "udp"
-
-    # Copy firewall playbook, tasks, and supporting files
-    fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/firewall-main.yml"), destination: "/tmp/firewall-main.yml"
-    fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/tasks"), destination: "/tmp/tasks"
-    fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/templates"), destination: "/tmp/templates"
-    fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "services/index.html.j2"), destination: "/tmp/index.html.j2"
+    # Provision
+    fw.vm.provision "file", source: File.join(File.dirname(__FILE__), "ansible"), destination: "/tmp/ansible"
     fw.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "/tmp/firewall-main.yml"
-      ansible.provisioning_path = "/tmp"
+      ansible.playbook = "playbooks/firewall.yml"
+      ansible.provisioning_path = "/tmp/ansible"
       ansible.compatibility_mode = "2.0"
-      # Read Mullvad WireGuard config file content if path is provided
-      mullvad_config_path = ENV['MULLVAD_WG_CONF'] || ''
-      mullvad_config_content = mullvad_config_path.length > 0 && File.exist?(mullvad_config_path) ? File.read(mullvad_config_path) : ''
       ansible.extra_vars = {
-        wg0_conf: mullvad_config_content,
         lab_network: lab_network,
-        firewall_ip: lab_firewall_ip,
+        lab_netmask: lab_netmask,
+        lab_gateway: lab_firewall_ip,
+        lab_ip: lab_firewall_ip,
         openrelik_ip: openrelik_ip,
         remnux_ip: remnux_ip,
-        neko_ip: neko_ip,
-        pangolin_ip: pangolin_ip,
-        pangolin_enabled: pangolin_enabled,
-        host_network_cidr: host_network_cidr
+        enable_wireguard: enable_wireguard,
+        wg_endpoint: wg_endpoint # Mullvad exit point
       }
     end
   end
 
-  # OpenRelik VM (Lab network only)
+  # OpenRelik VM
   config.vm.define "openrelik" do |orv|
     orv.vm.box = "generic/ubuntu2204"
     orv.vm.hostname = "utgard-openrelik"
@@ -114,38 +93,34 @@ Vagrant.configure("2") do |config|
       lv.cpus = or_cpus
     end
 
-    # Only on utgard-lab (isolated), no direct host access - auto-created by Vagrant
+    # Lab network
     orv.vm.network "private_network",
       ip: openrelik_ip,
-      netmask: "255.255.255.0",
+      netmask: lab_netmask,
       libvirt__network_name: "utgard-lab",
       libvirt__dhcp_enabled: false,
       auto_config: true
 
-    # Copy OpenRelik playbook and tasks
-    orv.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/openrelik-main.yml"), destination: "/tmp/openrelik-main.yml"
-    orv.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/tasks"), destination: "/tmp/tasks"
-    # Copy patches only if the local patches directory exists
-    if File.directory?(File.join(File.dirname(__FILE__), 'patches'))
-      orv.vm.provision "file", source: "patches", destination: "/tmp/patches"
-    end
+    # Provision
+    orv.vm.provision "file", source: File.join(File.dirname(__FILE__), "ansible"), destination: "/tmp/ansible"
     orv.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "/tmp/openrelik-main.yml"
-      ansible.provisioning_path = "/tmp"
+      ansible.playbook = "playbooks/openrelik.yml"
+      ansible.provisioning_path = "/tmp/ansible"
       ansible.compatibility_mode = "2.0"
       ansible.extra_vars = {
-        openrelik_client_id: ENV['OPENRELIK_CLIENT_ID'] || '',
-        openrelik_client_secret: ENV['OPENRELIK_CLIENT_SECRET'] || '',
-        openrelik_allowlist: (ENV['OPENRELIK_ALLOWLIST'] || '').split(',').map(&:strip).reject(&:empty?),
+        openrelik_client_id: openrelik_client_id,
+        openrelik_client_secret: openrelik_client_secret,
+        openrelik_run_migrations: openrelik_run_migrations,
+        openrelik_workers_enabled: openrelik_workers_enabled,
+        openrelik_ui_port: openrelik_ui_port,
+        openrelik_api_port: openrelik_api_port,
         lab_gateway: lab_firewall_ip,
-        lab_ip: openrelik_ip,
-        enable_extra_workers: enable_extra_workers,
-        openrelik_run_migrations: openrelik_run_migrations
+        lab_ip: openrelik_ip
       }
     end
   end
 
-  # REMnux Analyst VM (Lab network only)
+  # REMnux VM
   config.vm.define "remnux" do |rx|
     rx.vm.box = "generic/ubuntu2204"
     rx.vm.hostname = "utgard-remnux"
@@ -155,99 +130,23 @@ Vagrant.configure("2") do |config|
       lv.cpus = rx_cpus
     end
 
-    # Only on utgard-lab (isolated), no direct host access - auto-created by Vagrant
+    # Lab network
     rx.vm.network "private_network",
       ip: remnux_ip,
-      netmask: "255.255.255.0",
+      netmask: lab_netmask,
       libvirt__network_name: "utgard-lab",
       libvirt__dhcp_enabled: false,
       auto_config: true
 
-    # Copy REMnux playbook and tasks
-    rx.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/remnux-main.yml"), destination: "/tmp/remnux-main.yml"
-    rx.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/tasks"), destination: "/tmp/tasks"
+    # Provision
+    rx.vm.provision "file", source: File.join(File.dirname(__FILE__), "ansible"), destination: "/tmp/ansible"
     rx.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "/tmp/remnux-main.yml"
-      ansible.provisioning_path = "/tmp"
+      ansible.playbook = "playbooks/remnux.yml"
+      ansible.provisioning_path = "/tmp/ansible"
       ansible.compatibility_mode = "2.0"
       ansible.extra_vars = {
         lab_gateway: lab_firewall_ip,
         lab_ip: remnux_ip
-      }
-    end
-  end
-
-  # Neko Tor Browser VM (Lab network only)
-  config.vm.define "neko" do |nk|
-    nk.vm.box = "generic/ubuntu2204"
-    nk.vm.hostname = "utgard-neko"
-
-    nk.vm.provider "libvirt" do |lv|
-      lv.memory = nk_mem
-      lv.cpus = nk_cpus
-    end
-
-    # Only on utgard-lab (isolated), no direct host access
-    nk.vm.network "private_network",
-      ip: neko_ip,
-      netmask: "255.255.255.0",
-      libvirt__network_name: "utgard-lab",
-      libvirt__dhcp_enabled: false,
-      auto_config: true
-
-    # Access WebRTC via Pangolin (no host port forwarding)
-
-    # Copy neko playbook and tasks
-    nk.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/neko-main.yml"), destination: "/tmp/neko-main.yml"
-    nk.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/tasks"), destination: "/tmp/tasks"
-    nk.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "/tmp/neko-main.yml"
-      ansible.provisioning_path = "/tmp"
-      ansible.compatibility_mode = "2.0"
-      ansible.extra_vars = {
-        neko_password: neko_password,
-        neko_admin_password: neko_admin_password,
-        lab_gateway: lab_firewall_ip,
-        neko_webrtc_ip: ENV['NEKO_WEBRTC_IP'] || neko_ip
-      }
-    end
-  end
-
-  # Pangolin Access VM (Lab network only)
-  config.vm.define "pangolin" do |pg|
-    pg.vm.box = "generic/ubuntu2204"
-    pg.vm.hostname = "utgard-pangolin"
-
-    pg.vm.provider "libvirt" do |lv|
-      lv.memory = pg_mem
-      lv.cpus = pg_cpus
-    end
-
-    # Only on utgard-lab (isolated), no direct host access
-    pg.vm.network "private_network",
-      ip: pangolin_ip,
-      netmask: "255.255.255.0",
-      libvirt__network_name: "utgard-lab",
-      libvirt__dhcp_enabled: false,
-      auto_config: true
-
-    # Copy Pangolin playbook, tasks, and templates
-    pg.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/pangolin-main.yml"), destination: "/tmp/pangolin-main.yml"
-    pg.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/tasks"), destination: "/tmp/tasks"
-    pg.vm.provision "file", source: File.join(File.dirname(__FILE__), "provision/templates"), destination: "/tmp/templates"
-    pg.vm.provision "ansible_local" do |ansible|
-      ansible.playbook = "/tmp/pangolin-main.yml"
-      ansible.provisioning_path = "/tmp"
-      ansible.compatibility_mode = "2.0"
-      ansible.extra_vars = {
-        lab_gateway: lab_firewall_ip,
-        lab_ip: pangolin_ip,
-        pangolin_enabled: pangolin_enabled,
-        pangolin_install_dir: pangolin_install_dir,
-        pangolin_domain: pangolin_domain,
-        pangolin_bind_ip: pangolin_bind_ip,
-        pangolin_acme_email: pangolin_acme_email,
-        pangolin_secret: pangolin_secret
       }
     end
   end

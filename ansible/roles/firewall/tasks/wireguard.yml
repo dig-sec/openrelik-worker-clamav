@@ -1,0 +1,73 @@
+---
+# WireGuard VPN configuration (Mullvad exit)
+# Allows lab VMs to browse internet through secure Mullvad tunnel
+
+- name: Install WireGuard
+  apt:
+    name:
+      - wireguard
+      - wireguard-tools
+    state: present
+
+- name: Set WireGuard defaults
+  set_fact:
+    wg_enabled: "{{ enable_wireguard | default(true) }}"
+
+- name: Configure WireGuard with Mullvad exit
+  block:
+    - name: Create WireGuard directory
+      file:
+        path: /etc/wireguard
+        state: directory
+        mode: '0700'
+
+    # Method 1: Direct config content (wg0_conf variable)
+    - name: Deploy WireGuard config from variable
+      copy:
+        content: "{{ wg0_conf }}"
+        dest: /etc/wireguard/wg0.conf
+        mode: '0600'
+      when: (wg0_conf | default('') | length) > 0
+
+    # Method 2: Select Mullvad endpoint from role files directory
+    - name: Deploy WireGuard config from endpoint selection
+      copy:
+        src: "{{ wg_endpoint }}.conf"
+        dest: /etc/wireguard/wg0.conf
+        mode: '0600'
+      when: (wg0_conf | default('') | length) == 0
+
+    - name: Enable WireGuard interface
+      command: wg-quick up wg0
+      args:
+        creates: /sys/class/net/wg0
+      register: wg_up
+      changed_when: "'add' in wg_up.stdout"
+
+    - name: Enable WireGuard at boot
+      systemd:
+        name: wg-quick@wg0
+        enabled: yes
+        state: started
+        daemon_reload: yes
+
+    - name: Verify WireGuard interface
+      command: ip addr show wg0
+      changed_when: false
+      register: wg_status
+
+    - name: Display WireGuard status
+      debug:
+        msg: "{{ wg_status.stdout_lines }}"
+
+    - name: Test Mullvad connectivity
+      command: ping -c 1 10.64.0.1
+      changed_when: false
+      failed_when: false
+
+  when: wg_enabled | bool
+
+- name: Show WireGuard details
+  command: wg show
+  changed_when: false
+  when: wg_enabled | bool

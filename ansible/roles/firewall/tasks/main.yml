@@ -1,0 +1,30 @@
+---
+# Firewall/Gateway VM provisioning
+
+- name: Install firewall packages
+  apt:
+    name:
+      - nftables
+      - dnsmasq
+      - iptables-persistent
+      - tcpdump
+      - tshark
+    state: present
+  tags: [firewall, install]
+
+- name: Configure DNS (dnsmasq)
+  include_tasks: dns.yml
+  tags: [firewall, dns]
+
+- name: Setup nftables firewall
+  include_tasks: nftables.yml
+  tags: [firewall, firewall]
+
+- name: Configure WireGuard VPN
+  include_tasks: wireguard.yml
+  tags: [firewall, wireguard]
+  when: enable_wireguard | default(true)
+
+- name: Setup monitoring
+  include_tasks: monitoring.yml
+  tags: [firewall, monitoring]

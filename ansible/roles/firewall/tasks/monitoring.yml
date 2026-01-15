@@ -1,0 +1,25 @@
+---
+# Monitoring setup for firewall VM
+
+- name: Install monitoring tools
+  apt:
+    name:
+      - prometheus-node-exporter
+      - sysstat
+    state: present
+
+- name: Enable monitoring services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop:
+    - prometheus-node-exporter
+  failed_when: false
+
+- name: Test node exporter
+  uri:
+    url: http://localhost:9100/metrics
+    status_code: 200
+  changed_when: false
+  failed_when: false

@@ -1,0 +1,20 @@
+---
+# Default variables for firewall role
+
+# Enable WireGuard/Mullvad VPN on the firewall gateway
+enable_wireguard: true
+
+# Default Mullvad endpoint to use when none is specified externally
+wg_endpoint: "se-mma-wg-002"
+
+# DNS (dnsmasq)
+dnsmasq_domain: "utgard.local"
+dnsmasq_upstream_servers:
+  - "10.64.0.1"
+  - "1.1.1.1"
+  - "8.8.8.8"
+
+# Firewall interfaces (override if needed)
+firewall_wireguard_interface: "wg0"
+firewall_tailscale_interface: "tailscale0"
+firewall_external_interface: ""

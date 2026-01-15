@@ -1,0 +1,74 @@
+# Utgard Lab Configuration
+# Copy and adjust for your deployment environment (local, Azure, etc.)
+
+#------------------------------------------------------------------------------
+# Network Configuration
+#------------------------------------------------------------------------------
+lab:
+  network: "10.20.0.0/24"
+  netmask: "255.255.255.0"
+  firewall_ip: "10.20.0.2"
+  openrelik_ip: "10.20.0.30"
+  remnux_ip: "10.20.0.20"
+
+host:
+  network_cidr: "10.1.0.0/24"
+  public_ip: "20.240.216.254"
+  private_ip: "10.1.0.4"
+
+#------------------------------------------------------------------------------
+# Service Ports
+#------------------------------------------------------------------------------
+service_ports:
+  openrelik_ui: 8711
+  openrelik_api: 8710
+
+#------------------------------------------------------------------------------
+# Feature Flags
+#------------------------------------------------------------------------------
+features:
+  # Toggle OpenRelik worker containers
+  enable_extra_workers: true
+  openrelik_run_migrations: true
+  enable_wireguard: true
+
+#------------------------------------------------------------------------------
+# WireGuard/Mullvad VPN Configuration
+#------------------------------------------------------------------------------
+wireguard:
+  # Options: se-mma-wg-001, se-mma-wg-002 (default), se-mma-wg-003
+  endpoint: "se-mma-wg-002"
+
+#------------------------------------------------------------------------------
+# Credentials (override via environment variables in production)
+#------------------------------------------------------------------------------
+credentials:
+  openrelik_client_id: ""
+  openrelik_client_secret: ""
+  openrelik_allowlist: []
+
+#------------------------------------------------------------------------------
+# VM Resources
+#------------------------------------------------------------------------------
+resources:
+  firewall:
+    memory: 2048
+    cpus: 2
+  openrelik:
+    memory: 4096
+    cpus: 2
+  remnux:
+    memory: 4096
+    cpus: 2
+
+#------------------------------------------------------------------------------
+# Azure-specific Configuration
+#------------------------------------------------------------------------------
+azure:
+  resource_group: "osint-intel_group"
+  location: "swedencentral"
+  vnet_name: "osint-intel-vnet"
+  subnet_name: "default"
+  public_ip: "20.240.216.254"
+  vm_name: "osint-intel"
+  deployment_mode: "docker-single-host"

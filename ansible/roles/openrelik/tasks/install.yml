@@ -1,0 +1,52 @@
+---
+# OpenRelik installation (Docker-based with all workers)
+
+- name: Create OpenRelik directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ openrelik_install_dir }}"
+    - "{{ openrelik_install_dir }}/data"
+    - "{{ openrelik_install_dir }}/config"
+    - "{{ openrelik_install_dir }}/postgres"
+
+- name: Render OpenRelik docker-compose with all workers
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ openrelik_install_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Pull OpenRelik images
+  command: docker-compose pull
+  args:
+    chdir: "{{ openrelik_install_dir }}"
+  changed_when: false
+
+- name: Start OpenRelik containers
+  command: docker-compose up -d
+  args:
+    chdir: "{{ openrelik_install_dir }}"
+  register: openrelik_start
+  changed_when: "'Creating' in openrelik_start.stderr"
+
+- name: Wait for OpenRelik to be ready
+  uri:
+    url: "http://localhost:{{ openrelik_ui_port }}"
+    status_code: 200
+  register: openrelik_health
+  retries: 30
+  delay: 10
+  failed_when: false
+
+- name: Show running OpenRelik containers
+  command: docker-compose ps
+  args:
+    chdir: "{{ openrelik_install_dir }}"
+  register: openrelik_ps
+  changed_when: false
+
+- name: Display OpenRelik status
+  debug:
+    msg: "{{ openrelik_ps.stdout_lines }}"

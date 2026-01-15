@@ -1,0 +1,19 @@
+---
+# Role defaults - can be overridden via playbook extra_vars
+
+# Lab network
+lab_gateway: "10.20.0.2"
+lab_ip: "0.0.0.0"
+lab_network: "10.20.0.0/24"
+
+# WireGuard (optional)
+wg0_conf: ""
+
+# Docker
+docker_skip_check: false
+
+# Network configuration toggle (disable for localhost provisioning)
+common_configure_network: true
+
+# Health check
+health_check_docker: true

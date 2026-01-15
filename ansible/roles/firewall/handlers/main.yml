@@ -1,0 +1,12 @@
+---
+# Handlers for firewall role
+
+- name: restart dnsmasq
+  systemd:
+    name: dnsmasq
+    state: restarted
+
+- name: reload nftables
+  systemd:
+    name: nftables
+    state: reloaded

@@ -1,0 +1,29 @@
+# Managed by Ansible (firewall role)
+domain-needed
+bogus-priv
+no-resolv
+
+{% if dnsmasq_domain is defined and dnsmasq_domain | length > 0 %}
+domain={{ dnsmasq_domain }}
+expand-hosts
+{% endif %}
+
+{% if lab_gateway is defined and lab_gateway | length > 0 %}
+listen-address={{ lab_gateway }}
+{% endif %}
+listen-address=127.0.0.1
+bind-interfaces
+
+{% for server in dnsmasq_upstream_servers | default([]) %}
+server={{ server }}
+{% endfor %}
+
+{% if lab_gateway is defined and lab_gateway | length > 0 %}
+address=/utgard-firewall.{{ dnsmasq_domain }}/{{ lab_gateway }}
+{% endif %}
+{% if openrelik_ip is defined and openrelik_ip | length > 0 %}
+address=/utgard-openrelik.{{ dnsmasq_domain }}/{{ openrelik_ip }}
+{% endif %}
+{% if remnux_ip is defined and remnux_ip | length > 0 %}
+address=/utgard-remnux.{{ dnsmasq_domain }}/{{ remnux_ip }}
+{% endif %}

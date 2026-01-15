@@ -1,0 +1,64 @@
+---
+# OpenRelik role defaults
+
+openrelik_client_id: ""
+openrelik_client_secret: ""
+openrelik_run_migrations: true
+openrelik_install_dir: /opt/openrelik
+openrelik_api_port: 8710
+openrelik_ui_port: 8711
+openrelik_workers_enabled: true
+
+# Enable all available workers
+openrelik_workers:
+  - name: plaso
+    image: ghcr.io/openrelik/openrelik-worker-plaso:latest
+    enabled: true
+  - name: yara
+    image: ghcr.io/openrelik/openrelik-worker-yara:latest
+    enabled: true
+  - name: strings
+    image: ghcr.io/openrelik/openrelik-worker-strings:latest
+    enabled: true
+  - name: floss
+    image: ghcr.io/openrelik/openrelik-worker-floss:latest
+    enabled: true
+  - name: hayabusa
+    image: ghcr.io/openrelik/openrelik-worker-hayabusa:latest
+    enabled: true
+  - name: capa
+    image: ghcr.io/openrelik/openrelik-worker-capa:latest
+    enabled: true
+  - name: os-creds
+    image: ghcr.io/openrelik/openrelik-worker-os-creds:latest
+    enabled: true
+  - name: extraction
+    image: ghcr.io/openrelik/openrelik-worker-extraction:latest
+    enabled: true
+  - name: containers
+    image: ghcr.io/openrelik/openrelik-worker-containers:latest
+    enabled: true
+  - name: bulkextractor
+    image: ghcr.io/openrelik/openrelik-worker-bulkextractor:latest
+    enabled: true
+  - name: grep
+    image: ghcr.io/openrelik/openrelik-worker-grep:latest
+    enabled: true
+  - name: entropy
+    image: ghcr.io/openrelik/openrelik-worker-entropy:latest
+    enabled: true
+  - name: dfindexeddb
+    image: ghcr.io/openrelik/openrelik-worker-dfindexeddb:latest
+    enabled: true
+  - name: chromecreds
+    image: ghcr.io/openrelik/openrelik-worker-chromecreds:latest
+    enabled: true
+  - name: cloud-logs
+    image: ghcr.io/openrelik/openrelik-worker-cloud-logs:latest
+    enabled: true
+  - name: analyzer-logs
+    image: ghcr.io/openrelik/openrelik-worker-analyzer-logs:latest
+    enabled: true
+  - name: analyzer-config
+    image: ghcr.io/openrelik/openrelik-worker-analyzer-config:latest
+    enabled: true

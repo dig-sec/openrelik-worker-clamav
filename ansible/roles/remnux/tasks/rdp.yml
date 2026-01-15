@@ -1,0 +1,27 @@
+---
+# RDP server setup for remote desktop access
+
+- name: Install xrdp (RDP server)
+  apt:
+    name:
+      - xrdp
+      - xfce4
+      - xfce4-terminal
+      - dbus
+    state: present
+
+- name: Enable xrdp service
+  systemd:
+    name: xrdp
+    enabled: yes
+    state: started
+
+- name: Allow RDP port in firewall
+  command: ufw allow 3389/tcp
+  changed_when: false
+  failed_when: false
+
+- name: Test RDP connectivity
+  command: netstat -tuln | grep 3389
+  changed_when: false
+  failed_when: false

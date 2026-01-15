@@ -1,0 +1,22 @@
+---
+# Network configuration for lab VMs
+
+- name: Configure DNS (resolv.conf)
+  template:
+    src: resolv.conf.j2
+    dest: /etc/resolv.conf
+    mode: '0644'
+  when: lab_gateway is defined and lab_gateway | length > 0
+
+- name: Enable IP forwarding (for firewall VM)
+  sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: yes
+    state: present
+  when: ansible_hostname == 'utgard-firewall'
+
+- name: Verify network connectivity
+  command: ping -c 1 8.8.8.8
+  changed_when: false
+  failed_when: false

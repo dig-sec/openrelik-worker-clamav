@@ -1,0 +1,31 @@
+---
+# NFTables firewall configuration
+
+- name: Enable nftables
+  systemd:
+    name: nftables
+    enabled: yes
+    state: started
+
+- name: Resolve firewall external interface
+  set_fact:
+    firewall_external_interface_resolved: "{{ firewall_external_interface | default('') | length > 0 | ternary(firewall_external_interface, ansible_default_ipv4.interface) }}"
+
+- name: Resolve firewall egress interface
+  set_fact:
+    firewall_egress_interface: "{{ firewall_wireguard_interface if (enable_wireguard | default(true)) else firewall_external_interface_resolved }}"
+
+- name: Configure nftables rules
+  template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    backup: yes
+  notify: reload nftables
+
+- name: Save nftables rules
+  command: nft list ruleset > /etc/nftables-backup.rules
+  changed_when: false
+
+- name: Verify firewall status
+  command: nft list tables
+  changed_when: false

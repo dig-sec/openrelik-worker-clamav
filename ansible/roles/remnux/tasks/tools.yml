@@ -1,0 +1,40 @@
+---
+# REMnux malware analysis tools installation
+
+- name: Install analysis tools
+  apt:
+    name:
+      - python3
+      - python3-pip
+      - git
+      - binwalk
+      - radare2
+      - hexdump
+      - strings
+      - file
+      - exiftool
+      - strace
+      - ltrace
+      - gdb
+      - nmap
+      - wireshark
+      - tcpdump
+      - volatility3
+    state: present
+
+- name: Install Python analysis tools
+  pip:
+    name:
+      - pycryptodome
+      - capstone
+      - angr
+      - keystone-engine
+      - yara-python
+    state: present
+
+- name: Clone REMnux repository
+  git:
+    repo: https://github.com/REMnux/remnux-cli
+    dest: /opt/remnux
+    update: yes
+  failed_when: false

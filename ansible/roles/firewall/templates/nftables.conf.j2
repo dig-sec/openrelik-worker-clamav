@@ -1,0 +1,42 @@
+#!/usr/sbin/nft -f
+# Managed by Ansible (firewall role)
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority 0; policy drop;
+
+    iif "lo" accept
+    ct state established,related accept
+    ip protocol icmp accept
+    iifname "{{ firewall_tailscale_interface }}" accept
+
+    tcp dport 22 accept
+    ip saddr {{ lab_network }} udp dport 53 accept
+    ip saddr {{ lab_network }} tcp dport 53 accept
+  }
+
+  chain forward {
+    type filter hook forward priority 0; policy drop;
+
+    ct state established,related accept
+    ip saddr {{ lab_network }} accept
+    ip daddr {{ lab_network }} accept
+  }
+
+  chain output {
+    type filter hook output priority 0; policy accept;
+  }
+}
+
+table ip nat {
+  chain prerouting {
+    type nat hook prerouting priority -100; policy accept;
+  }
+
+  chain postrouting {
+    type nat hook postrouting priority 100; policy accept;
+    ip saddr {{ lab_network }} oifname "{{ firewall_egress_interface }}" masquerade
+  }
+}

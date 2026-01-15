@@ -1,0 +1,4 @@
+# Managed by Ansible (common role)
+{% if lab_gateway is defined and lab_gateway | length > 0 %}
+nameserver {{ lab_gateway }}
+{% endif %}

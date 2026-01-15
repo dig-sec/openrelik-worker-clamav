@@ -1,0 +1,10 @@
+---
+# REMnux VM provisioning (malware analysis)
+
+- name: Install REMnux tools
+  include_tasks: tools.yml
+  tags: [remnux, install]
+
+- name: Setup RDP server
+  include_tasks: rdp.yml
+  tags: [remnux, rdp]

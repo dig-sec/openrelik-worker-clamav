@@ -1,0 +1,37 @@
+---
+# DNS configuration (dnsmasq) for lab VMs
+
+- name: Install dnsmasq
+  apt:
+    name: dnsmasq
+    state: present
+
+- name: Stop systemd-resolved
+  systemd:
+    name: systemd-resolved
+    enabled: no
+    state: stopped
+    daemon_reload: yes
+
+- name: Free port 53
+  command: netstat -tuln | grep LISTEN | grep :53
+  changed_when: false
+  failed_when: false
+
+- name: Configure dnsmasq
+  template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+    backup: yes
+  notify: restart dnsmasq
+
+- name: Enable dnsmasq service
+  systemd:
+    name: dnsmasq
+    enabled: yes
+    state: started
+    daemon_reload: yes
+
+- name: Test DNS resolution
+  command: nslookup google.com 127.0.0.1
+  changed_when: false

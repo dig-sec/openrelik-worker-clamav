@@ -1,0 +1,31 @@
+---
+# Health checks and verification tasks
+
+- name: Check system uptime
+  command: uptime
+  changed_when: false
+  register: uptime_result
+
+- name: Display uptime
+  debug:
+    msg: "System uptime: {{ uptime_result.stdout }}"
+
+- name: Check disk space
+  command: df -h /
+  changed_when: false
+  register: disk_result
+
+- name: Check available memory
+  command: free -h
+  changed_when: false
+  register: memory_result
+
+- name: Check Docker status
+  command: systemctl status docker
+  changed_when: false
+  when: not docker_skip_check | default(false)
+
+- name: Test DNS resolution
+  command: "nslookup google.com {{ (lab_gateway if (common_configure_network | default(true) and lab_gateway | default('') | length > 0) else '8.8.8.8') }}"
+  changed_when: false
+  failed_when: false

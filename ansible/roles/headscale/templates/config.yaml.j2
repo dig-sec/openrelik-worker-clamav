@@ -1,0 +1,27 @@
+server_url: {{ headscale_server_url }}
+listen_addr: {{ headscale_listen_addr }}
+metrics_listen_addr: {{ headscale_metrics_addr }}
+log_level: {{ headscale_log_level }}
+
+db_type: {{ headscale_db_type }}
+db_path: {{ headscale_db_path }}
+
+noise:
+  private_key_path: /var/lib/headscale/noise_private.key
+
+prefixes:
+  v4: 100.64.0.0/10
+  v6: fd7a:115c:a1e0::/48
+
+derp:
+  server:
+    enabled: false
+  urls:
+    - https://controlplane.tailscale.com/derpmap/default
+
+dns:
+  base_domain: utgard.local
+  magic_dns: true
+  nameservers:
+    - 1.1.1.1
+    - 8.8.8.8

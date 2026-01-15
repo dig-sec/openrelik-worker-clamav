@@ -1,0 +1,26 @@
+---
+# OpenRelik VM provisioning
+
+- name: Install OpenRelik dependencies
+  apt:
+    name:
+      - python3-pip
+      - build-essential
+      - postgresql-client
+      - redis-tools
+    state: present
+  tags: [openrelik, install]
+
+- name: Setup Docker for OpenRelik
+  include_tasks: install.yml
+  tags: [openrelik, install]
+
+- name: Run database migrations
+  include_tasks: migrations.yml
+  tags: [openrelik, migrations]
+  when: openrelik_run_migrations | default(true)
+
+- name: Configure OpenRelik workers
+  include_tasks: workers.yml
+  tags: [openrelik, workers]
+  when: openrelik_workers_enabled | default(true)

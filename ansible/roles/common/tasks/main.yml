@@ -1,0 +1,37 @@
+---
+# Common tasks included by all VMs
+# Base OS setup, Docker, networking, health checks
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  tags: [common, install]
+
+- name: Install base packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - htop
+      - net-tools
+      - openssh-client
+      - openssh-server
+      - vim
+      - tmux
+    state: present
+  tags: [common, install]
+
+- name: Configure network
+  include_tasks: network.yml
+  tags: [common, network]
+  when: common_configure_network | default(true)
+
+- name: Setup Docker
+  include_tasks: docker.yml
+  tags: [common, docker]
+
+- name: Run health checks
+  include_tasks: health.yml
+  tags: [common, health]

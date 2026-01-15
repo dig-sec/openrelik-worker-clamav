@@ -1,0 +1,20 @@
+---
+# Tailscale client defaults
+
+# Headscale server URL (your self-hosted control server)
+tailscale_login_server: "http://{{ host_public_ip | default('127.0.0.1') }}:8080"
+
+# Auth key for joining (generated via headscale preauthkeys create)
+tailscale_authkey: ""
+
+# Hostname to register with
+tailscale_hostname: "{{ inventory_hostname }}"
+
+# Accept routes from other nodes
+tailscale_accept_routes: true
+
+# Advertise as exit node (firewall VM)
+tailscale_exit_node: false
+
+# Advertise subnet routes (for firewall to expose lab network)
+tailscale_advertise_routes: ""

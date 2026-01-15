@@ -1,0 +1,9 @@
+---
+# Headscale defaults
+headscale_listen_addr: "0.0.0.0:8080"
+headscale_metrics_addr: "127.0.0.1:9090"
+headscale_db_type: "sqlite3"
+headscale_db_path: "/var/lib/headscale/db.sqlite"
+headscale_log_level: "info"
+headscale_server_url: "http://{{ host_public_ip | default('127.0.0.1') }}:8080"
+headscale_state_dir: "/opt/headscale"
