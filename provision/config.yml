@@ -43,6 +43,18 @@ features:
   openrelik_run_migrations: true
 
 #------------------------------------------------------------------------------
+# Pangolin Access Layer
+#------------------------------------------------------------------------------
+pangolin:
+  enabled: true
+  domain: "utgard.dig-sec.com"
+  # Bind IP left empty to default to the firewall's primary address
+  bind_ip: ""
+  acme_email: "admin@utgard.dig-sec.com"
+  secret: "utgard-lab-secret-key-change-me-in-production"
+  install_dir: "/opt/pangolin"
+
+#------------------------------------------------------------------------------
 # Credentials (override via environment variables in production)
 #------------------------------------------------------------------------------
 credentials:

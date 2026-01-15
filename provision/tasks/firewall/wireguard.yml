@@ -58,19 +58,14 @@
     var: mullvad_verify.stdout_lines
   when: wg0_conf | length > 0 and mullvad_verify.stdout_lines is defined
 
-- name: Fail if Mullvad not configured
-  fail:
-    msg: |
-      ERROR: Mullvad WireGuard configuration is required.
-      Lab VMs access the internet via firewall through Mullvad VPN egress.
-      Set MULLVAD_WG_CONF environment variable with your Mullvad WireGuard config.
-      See docs/wireguard/WIREGUARD-SETUP.md for setup instructions.
-  when: wg0_conf | length == 0 and require_mullvad | bool
-
 - name: Warn if Mullvad not configured
   debug:
-    msg: "Mullvad WireGuard not configured; lab egress will use eth0 and public DNS."
-  when: wg0_conf | length == 0 and not require_mullvad | bool
+    msg: 
+      - "WARNING: Mullvad WireGuard not configured"
+      - "Lab VMs will use default routing for internet egress"
+      - "To configure Mullvad, set MULLVAD_WG_CONF environment variable"
+      - "See docs/wireguard/WIREGUARD-SETUP.md for setup instructions"
+  when: wg0_conf | length == 0
 
 - name: Check if WireGuard config exists
   stat:

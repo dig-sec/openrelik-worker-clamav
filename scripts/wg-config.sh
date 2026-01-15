@@ -53,18 +53,8 @@ EXAMPLES:
     ./scripts/wg-config.sh test
 
 ENDPOINTS:
-    se-mma-wg-001   193.138.218.220:51820 (Malmo 1)
-    se-mma-wg-002   193.138.218.80:51820  (Malmo 2)
-    se-mma-wg-003   193.138.218.83:51820  (Malmo 3)
-    se-mma-wg-004   193.138.218.130:51820 (Malmo 4)
-    se-mma-wg-005   193.138.218.82:51820  (Malmo 5)
-    se-mma-wg-011   141.98.255.94:51820   (Malmo Alt 1)
-    se-mma-wg-012   141.98.255.97:51820   (Malmo Alt 2)
-    se-mma-wg-101   45.83.220.68:51820    (Malmo Cloud 1)
-    se-mma-wg-102   45.83.220.69:51820    (Malmo Cloud 2)
-    se-mma-wg-103   45.83.220.70:51820    (Malmo Cloud 3)
-    se-mma-wg-111   45.129.59.19:51820    (Malmo Data 1)
-    se-mma-wg-112   45.129.59.129:51820   (Malmo Data 2)
+    Run: ./scripts/wg-config.sh list
+    (Uses *.conf files in wireguard/)
 
 EOF
 }

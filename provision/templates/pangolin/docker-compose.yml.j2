@@ -1,0 +1,61 @@
+services:
+  pangolin:
+    image: fosrl/pangolin:latest
+    container_name: pangolin
+    restart: unless-stopped
+    volumes:
+      - ./config:/app/config:Z
+    environment:
+      - PANGOLIN_HOST=0.0.0.0
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/v1/"]
+      interval: "3s"
+      timeout: "3s"
+      retries: 15
+
+  gerbil:
+    image: fosrl/gerbil:latest
+    container_name: gerbil
+    restart: unless-stopped
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --reachableAt=https://{{ pangolin_domain }}:51820
+      - --generateAndSaveKeyTo=/var/config/key
+      - --remoteConfig=http://pangolin:3001/api/v1/
+    volumes:
+      - ./config/:/var/config:Z
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    ports:
+      - {{ (pangolin_bind_ip | default('')) | length > 0 | ternary(pangolin_bind_ip, '0.0.0.0') }}:51820:51820/udp
+      - {{ (pangolin_bind_ip | default('')) | length > 0 | ternary(pangolin_bind_ip, '0.0.0.0') }}:21820:21820/udp
+      - {{ (pangolin_bind_ip | default('')) | length > 0 | ternary(pangolin_bind_ip, '0.0.0.0') }}:443:443
+      - {{ (pangolin_bind_ip | default('')) | length > 0 | ternary(pangolin_bind_ip, '0.0.0.0') }}:80:80
+    healthcheck:
+      test: ["CMD", "wg", "show"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  traefik:
+    image: traefik:v3.4.0
+    container_name: traefik
+    restart: unless-stopped
+    network_mode: service:gerbil
+    depends_on:
+      pangolin:
+        condition: service_healthy
+    command:
+      - --configFile=/etc/traefik/traefik_config.yml
+    volumes:
+      - ./config/traefik:/etc/traefik:ro,Z
+      - ./config/letsencrypt:/letsencrypt:Z
+      - ./config/traefik/logs:/var/log/traefik
+
+networks:
+  default:
+    driver: bridge
+    name: pangolin

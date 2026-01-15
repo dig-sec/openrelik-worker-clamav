@@ -14,6 +14,7 @@ lab:
   openrelik_ip: "10.20.0.30"
   remnux_ip: "10.20.0.20"
   neko_ip: "10.20.0.40"
+  pangolin_ip: "10.20.0.50"
 
 host:
   # Network CIDR for the hypervisor/host network (vagrant-libvirt default)
@@ -40,6 +41,18 @@ features:
   
   # Run OpenRelik database migrations on provision
   openrelik_run_migrations: true
+
+#------------------------------------------------------------------------------
+# Pangolin Access Layer
+#------------------------------------------------------------------------------
+pangolin:
+  enabled: true
+  domain: "utgard.dig-sec.com"
+  # Bind IP left empty to default to the firewall's primary address
+  bind_ip: ""
+  acme_email: "admin@utgard.dig-sec.com"
+  secret: "utgard-lab-secret-key-change-me-in-production"
+  install_dir: "/opt/pangolin"
 
 #------------------------------------------------------------------------------
 # Credentials (override via environment variables in production)
@@ -72,6 +85,9 @@ resources:
     memory: 4096
     cpus: 2
   neko:
+    memory: 3072
+    cpus: 2
+  pangolin:
     memory: 3072
     cpus: 2
 

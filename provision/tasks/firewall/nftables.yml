@@ -39,6 +39,12 @@
           
           # Lab network -> internet (via eth0 or wg0)
           iifname "eth1" accept
+
+{% if pangolin_enabled | bool %}
+          # Allow forwarded Pangolin traffic from host network
+          iifname "eth0" oifname "eth1" ip daddr {{ pangolin_ip }} tcp dport {80,443} accept
+          iifname "eth0" oifname "eth1" ip daddr {{ pangolin_ip }} udp dport {51820,21820} accept
+{% endif %}
         }
         
         chain output {
@@ -47,6 +53,15 @@
       }
       
       table ip nat {
+        chain prerouting {
+          type nat hook prerouting priority -100; policy accept;
+
+{% if pangolin_enabled | bool %}
+          iifname "eth0" tcp dport {80,443} dnat to {{ pangolin_ip }}
+          iifname "eth0" udp dport {51820,21820} dnat to {{ pangolin_ip }}
+{% endif %}
+        }
+
         chain postrouting {
           type nat hook postrouting priority 100; policy accept;
           

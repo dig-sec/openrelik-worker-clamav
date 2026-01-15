@@ -12,7 +12,8 @@
     remnux_ip: "{{ remnux_ip | default('10.20.0.20') }}"
     neko_ip: "{{ neko_ip | default('10.20.0.40') }}"
     host_network_cidr: "{{ host_network_cidr | default('192.168.121.0/24') }}"
-    require_mullvad: "{{ require_mullvad | default(false) }}"
+    pangolin_enabled: "{{ pangolin_enabled | default(true) }}"
+    pangolin_ip: "{{ pangolin_ip | default('10.20.0.50') }}"
   
   tasks:
     - name: Update apt cache
@@ -33,6 +34,7 @@
           - suricata
         state: present
 
+
     # WireGuard Mullvad (outbound VPN for lab traffic)
     - name: Configure WireGuard Mullvad
       include_tasks: tasks/firewall/wireguard.yml
@@ -45,9 +47,6 @@
     - name: Configure NFTables firewall
       include_tasks: tasks/firewall/nftables.yml
 
-    # NOTE: Guacamole removed - using Pangolin for remote access
-    # See docs/PANGOLIN-ACCESS.md for setup instructions
-
     # Network monitoring
     - name: Setup monitoring
       include_tasks: tasks/firewall/monitoring.yml
@@ -56,4 +55,4 @@
     - name: Verify firewall services
       include_tasks: tasks/common/health.yml
       vars:
-        health_check_docker: true
+        health_check_docker: false

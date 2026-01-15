@@ -1,0 +1,26 @@
+# Pangolin Configuration for Utgard Lab
+app:
+  dashboard_url: https://{{ pangolin_domain }}
+
+log_level: info
+
+domains:
+  utgard:
+    base_domain: {{ pangolin_domain }}
+
+server:
+  secret: {{ pangolin_secret }}
+
+gerbil:
+  base_endpoint: {{ pangolin_domain }}
+
+orgs:
+  block_size: 24
+  subnet_group: 100.90.137.0/20
+
+flags:
+  require_email_verification: false
+  disable_signup_without_invite: true
+  disable_user_create_org: false
+  allow_raw_resources: true
+  enable_integration_api: true
