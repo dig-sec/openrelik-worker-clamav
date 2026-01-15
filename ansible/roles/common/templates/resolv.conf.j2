@@ -1,4 +1,4 @@
 # Managed by Ansible (common role)
-{% if lab_gateway is defined and lab_gateway | length > 0 %}
-nameserver {{ lab_gateway }}
+{% if dns_resolver is defined and dns_resolver | length > 0 %}
+nameserver {{ dns_resolver }}
 {% endif %}

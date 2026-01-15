@@ -9,7 +9,7 @@
 
 - name: Resolve firewall external interface
   set_fact:
-    firewall_external_interface_resolved: "{{ firewall_external_interface | default('') | length > 0 | ternary(firewall_external_interface, ansible_default_ipv4.interface) }}"
+    firewall_external_interface_resolved: "{{ firewall_external_interface if (firewall_external_interface | default('') | length) > 0 else ansible_default_ipv4.interface }}"
 
 - name: Resolve firewall egress interface
   set_fact:
@@ -23,7 +23,7 @@
   notify: reload nftables
 
 - name: Save nftables rules
-  command: nft list ruleset > /etc/nftables-backup.rules
+  shell: nft list ruleset > /etc/nftables-backup.rules
   changed_when: false
 
 - name: Verify firewall status

@@ -16,5 +16,4 @@ dnsmasq_upstream_servers:
 
 # Firewall interfaces (override if needed)
 firewall_wireguard_interface: "wg0"
-firewall_tailscale_interface: "tailscale0"
 firewall_external_interface: ""

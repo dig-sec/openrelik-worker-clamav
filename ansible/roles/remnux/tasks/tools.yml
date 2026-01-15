@@ -1,16 +1,15 @@
 ---
 # REMnux malware analysis tools installation
 
-- name: Install analysis tools
+- name: Install core analysis tools
   apt:
     name:
       - python3
       - python3-pip
       - git
       - binwalk
-      - radare2
-      - hexdump
-      - strings
+      - bsdextrautils
+      - binutils
       - file
       - exiftool
       - strace
@@ -19,8 +18,16 @@
       - nmap
       - wireshark
       - tcpdump
-      - volatility3
     state: present
+
+- name: Install optional analysis tools if available
+  apt:
+    name: "{{ item }}"
+    state: present
+  failed_when: false
+  loop:
+    - radare2
+    - volatility3
 
 - name: Install Python analysis tools
   pip:

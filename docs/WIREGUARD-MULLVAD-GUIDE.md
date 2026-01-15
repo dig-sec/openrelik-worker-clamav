@@ -16,15 +16,15 @@ Utgard lab supports Mullvad VPN for secure, anonymized internet access through t
     └────┬────┘                     │
          │                          │
     ┌────┴────┐               ┌─────▼──────┐
-    │OpenRelik│               │   Internet  │
-    │ & REMnux│◄──── All traffic routed ──►│(Mullvad)
+    │ REMnux  │               │   Internet  │
+    │         │◄──── All traffic routed ──►│(Mullvad)
     └─────────┘    through secure tunnel   └─────────┘
 ```
 
 ## How It Works
 
 1. **Firewall VM** has WireGuard interface (wg0) connected to Mullvad exit
-2. **Lab VMs** (OpenRelik, REMnux) route all traffic through firewall
+2. **Lab VM** (REMnux) routes all traffic through firewall
 3. **All outbound traffic** is encrypted and anonymized via Mullvad
 4. **Host machine** can optionally connect to same exit point
 5. **No direct internet** access to lab VMs - everything through tunnel
@@ -88,10 +88,10 @@ wg show
 nslookup google.com 10.64.0.1
 ```
 
-### Check From OpenRelik VM
+### Check From REMnux VM
 
 ```bash
-vagrant ssh openrelik
+vagrant ssh remnux
 
 # All traffic goes through firewall
 ping 8.8.8.8
@@ -155,7 +155,6 @@ wg show
 ### Lab Network (10.20.0.0/24)
 
 - **Firewall**: 10.20.0.2 (gateway, WireGuard tunnel)
-- **OpenRelik**: 10.20.0.30 (routes through firewall)
 - **REMnux**: 10.20.0.20 (routes through firewall)
 
 ### WireGuard
@@ -210,7 +209,7 @@ sudo systemctl restart systemd-resolved
 - Verify firewall routing: `ip route show` on firewall
 - Check NAT rules: `sudo iptables -t nat -L`
 - Ensure firewall VM is running: `vagrant status`
-- Test connectivity: `ping 10.20.0.30` (from host, won't work if isolated)
+- Test connectivity: `ping 10.20.0.20` (from host, won't work if isolated)
 
 ## Security Considerations
 
@@ -259,6 +258,6 @@ Endpoint = [Mullvad IP:51820]
 
 ## Additional Resources
 
-- Lab README: [README.md](README.md)
-- WireGuard configs: [ansible/roles/firewall/files/](ansible/roles/firewall/files/)
-- Ansible provisioning: [ansible/README.md](ansible/README.md)
+- Lab README: [README.md](../README.md)
+- WireGuard configs: [ansible/roles/firewall/files/](../ansible/roles/firewall/files/)
+- Ansible provisioning: [ansible/README.md](../ansible/README.md)

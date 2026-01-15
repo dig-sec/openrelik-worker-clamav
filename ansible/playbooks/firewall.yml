@@ -6,4 +6,3 @@
   roles:
     - common      # Base OS setup
     - firewall    # Firewall-specific configuration
-    - tailscale   # Join Headscale mesh network

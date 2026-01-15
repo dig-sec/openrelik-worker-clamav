@@ -10,7 +10,6 @@ ansible/
 ├── inventory.yml         # Host definitions
 ├── playbooks/            # VM deployment playbooks
 │   ├── firewall.yml      # Firewall/gateway VM
-│   ├── openrelik.yml     # OpenRelik forensics VM
 │   └── remnux.yml        # REMnux analysis VM
 └── roles/
     ├── common/           # ⭐ SHARED: Used by all VMs
@@ -30,12 +29,14 @@ ansible/
     │   │   └── monitoring.yml
     │   ├── handlers/main.yml
     │   └── templates/
+    ├── guacamole/        # Remote access portal (web RDP/SSH)
+    │   ├── tasks/main.yml
+    │   ├── defaults/main.yml
+    │   └── templates/
     ├── openrelik/        # OpenRelik forensics specific
     │   ├── tasks/
     │   │   ├── main.yml
-    │   │   ├── install.yml
-    │   │   ├── workers.yml
-    │   │   └── migrations.yml
+    │   │   └── install.yml
     │   ├── defaults/main.yml
     │   └── templates/
     └── remnux/           # REMnux malware analysis specific
@@ -61,7 +62,7 @@ Each VM playbook includes **two roles**:
 ```yaml
 roles:
   - common      # Installs docker, sets up networking, base packages
-  - <specific>  # VM-specific tools (firewall, openrelik, remnux)
+  - <specific>  # Role-specific tools (firewall, openrelik, remnux)
 ```
 
 ## Usage
@@ -79,16 +80,13 @@ cd ansible
 # Firewall VM
 ansible-playbook -i inventory.yml playbooks/firewall.yml
 
-# OpenRelik VM
-ansible-playbook -i inventory.yml playbooks/openrelik.yml
-
 # REMnux VM
 ansible-playbook -i inventory.yml playbooks/remnux.yml
 
 # Specific role only
 ansible-playbook -i inventory.yml playbooks/firewall.yml --tags firewall,dns
 
-# Local Host (no VM) - Headscale + OpenRelik
+# Local Host (no VM) - OpenRelik + Guacamole
 # Requires Ansible installed on this host:
 #   sudo apt update && sudo apt install -y ansible-core
 ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
@@ -103,19 +101,28 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `common_configure_network`: Manage lab DNS/resolv.conf (default: true)
 
 ### OpenRelik
-- `openrelik_client_id`: Google OAuth client ID
-- `openrelik_client_secret`: Google OAuth secret
-- `openrelik_run_migrations`: Run DB migrations (default: true)
 - `openrelik_ui_port`: UI port mapping (default: 8711)
 - `openrelik_api_port`: API port mapping (default: 8710)
 - `openrelik_workers_enabled`: Enable worker containers (default: true)
+- `openrelik_extra_workers`: List of additional worker services merged via `docker-compose.extra-workers.yml` (includes yara/capa/clamav by default)
+
+### Guacamole
+- `guacamole_port`: HTTP port on host when TLS is disabled (default: 8081)
+- `guacamole_tls_enabled`: Enable HTTPS reverse proxy (default: false)
+- `guacamole_tls_port`: HTTPS port for Guacamole (default: 443)
+- `guacamole_tls_cert_path`: TLS cert file path on host (default: `/opt/guacamole/tls/fullchain.pem`)
+- `guacamole_tls_key_path`: TLS key file path on host (default: `/opt/guacamole/tls/privkey.pem`)
+- `guacamole_tls_server_name`: Optional TLS server_name (default: empty)
+- `guacamole_tls_self_signed`: Create a self-signed cert if missing (default: false)
+- `guacamole_db_user`: PostgreSQL user (default: `guacamole`)
+- `guacamole_db_password`: PostgreSQL password (auto-generated if empty)
+- `guacamole_state_dir`: Data/config path (default: `/opt/guacamole`)
 
 ### Firewall - WireGuard/Mullvad Integration
 - `enable_wireguard`: Enable/disable VPN setup (default: `true`)
 - `wg_endpoint`: Mullvad exit point selection (default: `se-mma-wg-002`)
   - Available: `se-mma-wg-001`, `se-mma-wg-002`, `se-mma-wg-003`
   - Set at deployment: `WG_ENDPOINT=se-mma-wg-001 vagrant up firewall`
-- `openrelik_ip`: OpenRelik VM IP for DNS host records (optional)
 - `remnux_ip`: REMnux VM IP for DNS host records (optional)
 - `dnsmasq_domain`: DNS suffix for lab hosts (default: `utgard.local`)
 - `dnsmasq_upstream_servers`: Upstream resolvers list (default: Mullvad + public)

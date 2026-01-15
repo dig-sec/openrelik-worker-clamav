@@ -10,7 +10,6 @@ table inet filter {
     iif "lo" accept
     ct state established,related accept
     ip protocol icmp accept
-    iifname "{{ firewall_tailscale_interface }}" accept
 
     tcp dport 22 accept
     ip saddr {{ lab_network }} udp dport 53 accept

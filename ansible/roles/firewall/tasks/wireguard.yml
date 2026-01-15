@@ -7,6 +7,7 @@
     name:
       - wireguard
       - wireguard-tools
+      - resolvconf
     state: present
 
 - name: Set WireGuard defaults
@@ -37,12 +38,21 @@
         mode: '0600'
       when: (wg0_conf | default('') | length) == 0
 
-    - name: Enable WireGuard interface
-      command: wg-quick up wg0
-      args:
-        creates: /sys/class/net/wg0
-      register: wg_up
-      changed_when: "'add' in wg_up.stdout"
+    - name: Ensure IPv6 is enabled for WireGuard
+      sysctl:
+        name: "{{ item }}"
+        value: '0'
+        sysctl_set: yes
+        state: present
+      loop:
+        - net.ipv6.conf.all.disable_ipv6
+        - net.ipv6.conf.default.disable_ipv6
+        - net.ipv6.conf.lo.disable_ipv6
+
+    - name: Ensure WireGuard interface is down before systemd start
+      command: wg-quick down wg0
+      changed_when: false
+      failed_when: false
 
     - name: Enable WireGuard at boot
       systemd:

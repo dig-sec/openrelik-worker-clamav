@@ -97,8 +97,8 @@
                                    │
                                    ▼
                     ┌──────────────────────────────┐
-                    │ Lab VMs deploy               │
-                    │ (openrelik, remnux)          │
+                    │ Lab VM deploy                │
+                    │ (remnux)                     │
                     │                              │
                     │ Default gateway: 10.20.0.2   │
                     │ (firewall VM)                │
@@ -117,8 +117,8 @@
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Lab VM (OpenRelik/REMnux)                                        │
-│ IP: 10.20.0.30 (openrelik) / 10.20.0.20 (remnux)               │
+│ Lab VM (REMnux)                                                 │
+│ IP: 10.20.0.20 (remnux)                                         │
 └──────────────────────┬───────────────────────────────────────────┘
                        │
                        │ Default route: 10.20.0.2
@@ -196,7 +196,7 @@
    - Enable wg0 interface
    - Verify connectivity
    ↓
-7. Lab VMs deploy (openrelik, remnux)
+7. Lab VM deploy (remnux)
    ↓
 8. All lab traffic routes through firewall → Mullvad
 ```

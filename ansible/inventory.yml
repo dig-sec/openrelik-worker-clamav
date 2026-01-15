@@ -3,15 +3,11 @@
 [firewall]
 utgard-firewall
 
-[openrelik]
-utgard-openrelik
-
 [remnux]
 utgard-remnux
 
 [lab:children]
 firewall
-openrelik
 remnux
 
 [all:vars]

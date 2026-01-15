@@ -1,0 +1,46 @@
+services:
+  guacd:
+    image: {{ guacamole_guacd_image }}
+    restart: unless-stopped
+
+  guacamole-db:
+    image: {{ guacamole_postgres_image }}
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: {{ guacamole_db_name }}
+      POSTGRES_USER: {{ guacamole_db_user }}
+      POSTGRES_PASSWORD: {{ guacamole_db_password_resolved }}
+    volumes:
+      - {{ guacamole_state_dir }}/postgres:/var/lib/postgresql/data
+      - {{ guacamole_state_dir }}/initdb:/docker-entrypoint-initdb.d:ro
+
+  guacamole:
+    image: {{ guacamole_guacamole_image }}
+    restart: unless-stopped
+    depends_on:
+      - guacd
+      - guacamole-db
+{% if not guacamole_tls_enabled | default(false) %}
+    ports:
+      - "{{ guacamole_port }}:8080"
+{% endif %}
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRESQL_HOSTNAME: guacamole-db
+      POSTGRESQL_DATABASE: {{ guacamole_db_name }}
+      POSTGRESQL_USER: {{ guacamole_db_user }}
+      POSTGRESQL_PASSWORD: {{ guacamole_db_password_resolved }}
+
+{% if guacamole_tls_enabled | default(false) %}
+  guacamole-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    depends_on:
+      - guacamole
+    ports:
+      - "{{ guacamole_tls_port }}:{{ guacamole_tls_port }}"
+    volumes:
+      - {{ guacamole_state_dir }}/nginx:/etc/nginx/conf.d:ro
+      - {{ guacamole_tls_cert_path }}:/etc/nginx/tls/fullchain.pem:ro
+      - {{ guacamole_tls_key_path }}:/etc/nginx/tls/privkey.pem:ro
+{% endif %}

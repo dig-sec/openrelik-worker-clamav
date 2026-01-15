@@ -1,52 +1,122 @@
 ---
-# OpenRelik installation (Docker-based with all workers)
+# OpenRelik installation using official install script
 
-- name: Create OpenRelik directories
+- name: Create OpenRelik directory
   file:
-    path: "{{ item }}"
+    path: "{{ openrelik_install_dir }}"
     state: directory
     mode: '0755'
-  loop:
-    - "{{ openrelik_install_dir }}"
-    - "{{ openrelik_install_dir }}/data"
-    - "{{ openrelik_install_dir }}/config"
-    - "{{ openrelik_install_dir }}/postgres"
 
-- name: Render OpenRelik docker-compose with all workers
-  template:
-    src: docker-compose.yml.j2
-    dest: "{{ openrelik_install_dir }}/docker-compose.yml"
-    mode: '0644'
+- name: Check if OpenRelik is already installed
+  stat:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+  register: openrelik_compose_pre
 
-- name: Pull OpenRelik images
-  command: docker-compose pull
+- name: Download OpenRelik install script
+  get_url:
+    url: https://raw.githubusercontent.com/openrelik/openrelik-deploy/main/docker/install.sh
+    dest: "{{ openrelik_install_dir }}/install.sh"
+    mode: '0755'
+  when: not openrelik_compose_pre.stat.exists
+
+- name: Run OpenRelik install script
+  command: ./install.sh
   args:
     chdir: "{{ openrelik_install_dir }}"
-  changed_when: false
+  when: not openrelik_compose_pre.stat.exists
+  register: openrelik_install
 
-- name: Start OpenRelik containers
-  command: docker-compose up -d
+- name: Refresh OpenRelik compose status
+  stat:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+  register: openrelik_compose
+
+- name: Set OpenRelik server URL for UI
+  lineinfile:
+    path: "{{ openrelik_install_dir }}/openrelik/config.env"
+    regexp: '^OPENRELIK_SERVER_URL='
+    line: "OPENRELIK_SERVER_URL=http://{{ host_public_ip | default('127.0.0.1') }}:{{ openrelik_api_port }}"
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Remove stray OpenRelik API bindings
+  lineinfile:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+    regexp: '^\\s*- 0\\.0\\.0\\.0:8710:8710$'
+    state: absent
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Remove stray OpenRelik UI bindings
+  lineinfile:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+    regexp: '^\\s*- 0\\.0\\.0\\.0:8711:8711$'
+    state: absent
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Update OpenRelik API binding
+  replace:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+    regexp: '127\\.0\\.0\\.1:8710:8710'
+    replace: "0.0.0.0:{{ openrelik_api_port }}:8710"
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Update OpenRelik UI binding
+  replace:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+    regexp: '127\\.0\\.0\\.1:8711:8711'
+    replace: "0.0.0.0:{{ openrelik_ui_port }}:8711"
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Ensure OpenRelik containers are running
+  command: docker compose up -d
   args:
-    chdir: "{{ openrelik_install_dir }}"
+    chdir: "{{ openrelik_install_dir }}/openrelik"
   register: openrelik_start
-  changed_when: "'Creating' in openrelik_start.stderr"
+  changed_when: "'Started' in openrelik_start.stderr or 'Created' in openrelik_start.stderr"
+  when:
+    - openrelik_compose.stat.exists
 
-- name: Wait for OpenRelik to be ready
+- name: Wait for OpenRelik UI to be ready
   uri:
     url: "http://localhost:{{ openrelik_ui_port }}"
     status_code: 200
   register: openrelik_health
   retries: 30
   delay: 10
-  failed_when: false
+  until: openrelik_health.status == 200
+  when:
+    - openrelik_compose.stat.exists
 
-- name: Show running OpenRelik containers
-  command: docker-compose ps
+- name: Wait for OpenRelik API to be ready
+  uri:
+    url: "http://localhost:{{ openrelik_api_port }}/"
+    status_code: [200, 404]
+  register: openrelik_api_health
+  retries: 10
+  delay: 5
+  until: openrelik_api_health.status in [200, 404]
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Show OpenRelik container status
+  command: >
+    docker compose
+      -f docker-compose.yml
+      -f docker-compose.extra-workers.yml
+      ps
   args:
-    chdir: "{{ openrelik_install_dir }}"
+    chdir: "{{ openrelik_install_dir }}/openrelik"
   register: openrelik_ps
   changed_when: false
+  when:
+    - openrelik_compose.stat.exists
 
 - name: Display OpenRelik status
   debug:
     msg: "{{ openrelik_ps.stdout_lines }}"
+  when:
+    - openrelik_compose.stat.exists

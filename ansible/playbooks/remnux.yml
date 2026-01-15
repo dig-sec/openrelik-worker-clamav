@@ -6,4 +6,3 @@
   roles:
     - common    # Base OS setup
     - remnux    # REMnux-specific configuration
-    - tailscale # Join Headscale mesh network

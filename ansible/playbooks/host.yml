@@ -5,8 +5,10 @@
   become: yes
   vars:
     common_configure_network: false
+    guacamole_tls_enabled: true
+    guacamole_tls_self_signed: true
 
   roles:
     - common       # Base tools + Docker
-    - headscale    # Headscale (Tailscale control server)
     - openrelik    # Run OpenRelik on host via Docker
+    - guacamole    # Remote access portal

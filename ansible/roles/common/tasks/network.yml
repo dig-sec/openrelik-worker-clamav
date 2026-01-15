@@ -1,12 +1,17 @@
 ---
 # Network configuration for lab VMs
 
+- name: Set DNS resolver for this host
+  set_fact:
+    dns_resolver: "{{ '8.8.8.8' if ansible_hostname == 'utgard-firewall' else lab_gateway }}"
+  when: lab_gateway is defined and lab_gateway | length > 0
+
 - name: Configure DNS (resolv.conf)
   template:
     src: resolv.conf.j2
     dest: /etc/resolv.conf
     mode: '0644'
-  when: lab_gateway is defined and lab_gateway | length > 0
+  when: dns_resolver is defined and dns_resolver | length > 0
 
 - name: Enable IP forwarding (for firewall VM)
   sysctl:

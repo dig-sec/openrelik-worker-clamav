@@ -1,0 +1,155 @@
+---
+# Guacamole installation (Docker-based)
+
+- name: Ensure Guacamole state directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ guacamole_state_dir }}"
+    - "{{ guacamole_state_dir }}/initdb"
+    - "{{ guacamole_state_dir }}/postgres"
+
+- name: Ensure Guacamole secrets directory
+  file:
+    path: "{{ guacamole_state_dir }}/secrets"
+    state: directory
+    mode: '0700'
+
+- name: Ensure Guacamole TLS directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0700'
+  loop:
+    - "{{ guacamole_state_dir }}/tls"
+    - "{{ guacamole_state_dir }}/nginx"
+  when: guacamole_tls_enabled | default(false)
+
+- name: Ensure OpenSSL is installed
+  package:
+    name: openssl
+    state: present
+
+- name: Use provided Guacamole DB password
+  set_fact:
+    guacamole_db_password_resolved: "{{ guacamole_db_password }}"
+  when: guacamole_db_password | length > 0
+
+- name: Check stored Guacamole DB password
+  stat:
+    path: "{{ guacamole_db_password_file }}"
+  register: guacamole_db_password_stat
+  when: guacamole_db_password | length == 0
+
+- name: Generate Guacamole DB password
+  command: openssl rand -hex 16
+  register: guacamole_db_password_gen
+  when:
+    - guacamole_db_password | length == 0
+    - not guacamole_db_password_stat.stat.exists
+
+- name: Store Guacamole DB password
+  copy:
+    dest: "{{ guacamole_db_password_file }}"
+    content: "{{ guacamole_db_password_gen.stdout }}"
+    mode: '0600'
+  when:
+    - guacamole_db_password | length == 0
+    - not guacamole_db_password_stat.stat.exists
+
+- name: Read stored Guacamole DB password
+  slurp:
+    path: "{{ guacamole_db_password_file }}"
+  register: guacamole_db_password_slurp
+  when: guacamole_db_password | length == 0
+
+- name: Set resolved Guacamole DB password
+  set_fact:
+    guacamole_db_password_resolved: "{{ guacamole_db_password_slurp.content | b64decode | trim }}"
+  when: guacamole_db_password | length == 0
+
+- name: Check Guacamole TLS certificate exists
+  stat:
+    path: "{{ guacamole_tls_cert_path }}"
+  register: guacamole_tls_cert
+  when: guacamole_tls_enabled | default(false)
+
+- name: Check Guacamole TLS key exists
+  stat:
+    path: "{{ guacamole_tls_key_path }}"
+  register: guacamole_tls_key
+  when: guacamole_tls_enabled | default(false)
+
+- name: Generate self-signed Guacamole TLS assets
+  command: >
+    openssl req -x509 -nodes -days {{ guacamole_tls_self_signed_days }}
+    -newkey rsa:2048
+    -keyout {{ guacamole_tls_key_path }}
+    -out {{ guacamole_tls_cert_path }}
+    -subj "/CN={{ guacamole_tls_self_signed_common_name }}"
+  when:
+    - guacamole_tls_enabled | default(false)
+    - guacamole_tls_self_signed | default(false)
+    - not guacamole_tls_cert.stat.exists or not guacamole_tls_key.stat.exists
+
+- name: Refresh Guacamole TLS certificate status
+  stat:
+    path: "{{ guacamole_tls_cert_path }}"
+  register: guacamole_tls_cert
+  when: guacamole_tls_enabled | default(false)
+
+- name: Refresh Guacamole TLS key status
+  stat:
+    path: "{{ guacamole_tls_key_path }}"
+  register: guacamole_tls_key
+  when: guacamole_tls_enabled | default(false)
+
+- name: Validate Guacamole TLS assets
+  assert:
+    that:
+      - guacamole_tls_cert.stat.exists
+      - guacamole_tls_key.stat.exists
+    fail_msg: >-
+      Guacamole TLS is enabled but cert/key are missing.
+      Provide files at {{ guacamole_tls_cert_path }} and {{ guacamole_tls_key_path }}.
+  when: guacamole_tls_enabled | default(false)
+
+- name: Render Guacamole TLS proxy config
+  template:
+    src: nginx.conf.j2
+    dest: "{{ guacamole_state_dir }}/nginx/guacamole.conf"
+    mode: '0644'
+  when: guacamole_tls_enabled | default(false)
+
+- name: Generate Guacamole database schema
+  shell: >
+    docker run --rm {{ guacamole_guacamole_image }}
+    /opt/guacamole/bin/initdb.sh --postgres > {{ guacamole_initdb_path }}
+  args:
+    creates: "{{ guacamole_initdb_path }}"
+
+- name: Render Guacamole docker-compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ guacamole_state_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Start Guacamole
+  command: docker compose up -d
+  args:
+    chdir: "{{ guacamole_state_dir }}"
+  register: guacamole_up
+  changed_when: "'Created' in guacamole_up.stderr or 'Started' in guacamole_up.stderr"
+
+- name: Show Guacamole container status
+  command: docker compose ps
+  args:
+    chdir: "{{ guacamole_state_dir }}"
+  register: guacamole_ps
+  changed_when: false
+
+- name: Display Guacamole status
+  debug:
+    msg: "{{ guacamole_ps.stdout_lines }}"

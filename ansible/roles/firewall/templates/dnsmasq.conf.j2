@@ -21,9 +21,6 @@ server={{ server }}
 {% if lab_gateway is defined and lab_gateway | length > 0 %}
 address=/utgard-firewall.{{ dnsmasq_domain }}/{{ lab_gateway }}
 {% endif %}
-{% if openrelik_ip is defined and openrelik_ip | length > 0 %}
-address=/utgard-openrelik.{{ dnsmasq_domain }}/{{ openrelik_ip }}
-{% endif %}
 {% if remnux_ip is defined and remnux_ip | length > 0 %}
 address=/utgard-remnux.{{ dnsmasq_domain }}/{{ remnux_ip }}
 {% endif %}

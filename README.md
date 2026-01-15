@@ -8,12 +8,12 @@ A simplified OSINT and forensics lab built with Vagrant, Ansible, and Docker.
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Azure Host (20.240.216.254)                  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Headscale  │  │  OpenRelik  │  │   Vagrant VMs           │  │
-│  │  (control)  │  │  (forensics)│  │  ┌─────────┐ ┌────────┐ │  │
-│  │  :8080      │  │  :8711      │  │  │Firewall │→│REMnux  │ │  │
-│  └──────┬──────┘  └─────────────┘  │  │ (WG+TS) │ │(TS)    │ │  │
+│  │ Guacamole   │  │  OpenRelik  │  │   Vagrant VMs           │  │
+│  │ (remote UI) │  │  (forensics)│  │  ┌─────────┐ ┌────────┐ │  │
+│  │ :443        │  │  :8711      │  │  │Firewall │→│REMnux  │ │  │
+│  └──────┬──────┘  └─────────────┘  │  │ (WG)    │ │(RDP)   │ │  │
 │         │                          │  └─────────┘ └────────┘ │  │
-│         │  Tailscale Mesh          └─────────────────────────┘  │
+│         │  Browser access          └─────────────────────────┘  │
 │         └──────────────────────────────────────────────────────►│
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -25,38 +25,36 @@ A simplified OSINT and forensics lab built with Vagrant, Ansible, and Docker.
 sudo apt update && sudo apt install -y ansible-core
 ```
 
-### 2. Provision Host Services (Headscale + OpenRelik)
+### 2. Provision Host Services (OpenRelik + Guacamole)
 ```bash
-cd /home/azureuser/git/utgard
-ansible-playbook -i ansible/inventory.yml ansible/playbooks/host.yml -l localhost
+cd /home/azureuser/git/utgard/ansible
+sudo ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 ```
 
-### 3. Create Headscale Auth Key
-```bash
-docker exec headscale headscale preauthkeys create --user default --reusable --expiration 24h
-```
+### 3. Access Guacamole
+Browse to `https://20.240.216.254.nip.io/guacamole` and log in with `guacadmin` / `guacadmin` (change the password on first login). If you see a certificate warning, the default setup uses a self-signed cert.
 
-### 4. Deploy VMs with Tailscale
+### 4. Deploy VMs
 ```bash
-# Set the auth key from step 3
-export TAILSCALE_AUTHKEY="your-key-here"
-
-# Deploy firewall (with WireGuard + Tailscale)
 vagrant up firewall
-
-# Deploy REMnux (behind firewall, with Tailscale)
 vagrant up remnux
 ```
 
 ## Configuration
 
-Edit `config.yml` to adjust IPs, ports, VM resources, and feature flags. Environment variables like `WG_ENDPOINT`, `OPENRELIK_CLIENT_ID`, and `OPENRELIK_CLIENT_SECRET` override the config during provisioning.
+Edit `config.yml` to adjust IPs, ports, VM resources, and feature flags. Environment variables like `WG_ENDPOINT` override the config during provisioning.
+
+## Guacamole Access
+
+Guacamole runs on the host and brokers RDP/SSH sessions to lab VMs without exposing those ports publicly. Create connections in the Guacamole UI for:
+- **REMnux** (RDP: `10.20.0.20:3389`)
+- **Firewall** (SSH: `10.20.0.2:22`)
 
 ## Access
 
 - **OpenRelik UI** (default): http://20.240.216.254:8711
 - **OpenRelik API** (default): http://20.240.216.254:8710
-- **Headscale**: http://20.240.216.254:8080
+- **Guacamole**: https://20.240.216.254.nip.io/guacamole
 - **VMs**: `vagrant ssh firewall` or `vagrant ssh remnux`
 
 ## Lab Network
@@ -64,26 +62,29 @@ Edit `config.yml` to adjust IPs, ports, VM resources, and feature flags. Environ
 - Host: `20.240.216.254` (Azure public IP)
 - Firewall VM: `10.20.0.2` (lab gateway with WireGuard/Mullvad)
 - REMnux VM: `10.20.0.20` (behind firewall)
-- Tailscale: `100.64.x.x/10` (mesh overlay via Headscale)
+
+## REMnux Recovery
+
+REMnux is a high-risk analysis VM. Use snapshots to roll back after malware testing.
+
+```bash
+# Create a clean snapshot after provisioning
+vagrant snapshot save remnux clean
+
+# Revert when needed
+vagrant snapshot restore remnux clean
+```
+
+Snapshots are auto-created when `features.remnux_snapshot: true` in `config.yml`.
 
 ## OpenRelik Workers
 
-All 17 workers are enabled by default (set `features.enable_extra_workers: false` in `config.yml` to disable):
-- **plaso** - Timeline generation
-- **yara** - YARA rule scanning
-- **strings/floss** - String extraction
-- **hayabusa** - Windows EVTX triage
-- **capa** - Executable capability analysis
-- **os-creds** - OS credential extraction
-- **extraction** - File extraction from disk images
-- **bulkextractor** - Bulk forensics
-- **containers** - Container operations
-- **grep/entropy** - Pattern matching and entropy analysis
-- **dfindexeddb/chromecreds** - Browser forensics
-- **cloud-logs/analyzer-logs/analyzer-config** - Log analysis
+OpenRelik runs the core workers from the official compose file plus any extras defined in `ansible/roles/openrelik/defaults/main.yml` (override `openrelik_extra_workers` if needed).
 
 ## Documentation
 
 - `QUICK-REFERENCE.md` - Common commands
+- `TEAM-ACCESS.md` - Analyst onboarding and access
 - `WIREGUARD-MULLVAD-GUIDE.md` - VPN setup
+- `docs/DEPLOYMENT-FLOW.md` - Deployment flow details
 - `ansible/README.md` - Ansible roles and provisioning

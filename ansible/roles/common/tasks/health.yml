@@ -26,6 +26,6 @@
   when: not docker_skip_check | default(false)
 
 - name: Test DNS resolution
-  command: "nslookup google.com {{ (lab_gateway if (common_configure_network | default(true) and lab_gateway | default('') | length > 0) else '8.8.8.8') }}"
+  command: "nslookup google.com {{ (dns_resolver if (common_configure_network | default(true) and dns_resolver | default('') | length > 0) else '8.8.8.8') }}"
   changed_when: false
   failed_when: false

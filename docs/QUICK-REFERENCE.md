@@ -23,7 +23,7 @@ vagrant ssh firewall
 wg show
 
 # Check lab VM can reach internet
-vagrant ssh openrelik
+vagrant ssh remnux
 curl https://am.i.mullvad.net/json | jq '.ip'  # Should show Mullvad IP
 ```
 
@@ -36,6 +36,12 @@ curl https://am.i.mullvad.net/json | jq '.ip'  # Should show Mullvad IP
 | `WG_ENDPOINT=se-mma-wg-003 vagrant up firewall` | se-mma-wg-003 | 193.138.218.83 |
 
 ## Common Tasks
+
+### Guacamole
+```bash
+# Web UI for RDP/SSH access
+https://20.240.216.254.nip.io/guacamole
+```
 
 ### Check WireGuard Status
 ```bash
@@ -55,7 +61,7 @@ sudo wg-quick up wg0
 
 ### Verify No DNS Leaks
 ```bash
-vagrant ssh openrelik
+vagrant ssh remnux
 nslookup google.com       # Should use Mullvad DNS (10.64.0.1)
 ```
 
@@ -72,6 +78,15 @@ vagrant destroy firewall -f
 vagrant up firewall
 ```
 
+### REMnux Snapshot Recovery
+```bash
+# Save a clean snapshot
+vagrant snapshot save remnux clean
+
+# Restore after analysis
+vagrant snapshot restore remnux clean
+```
+
 ## Troubleshooting Quick Links
 
 | Issue | Solution |
@@ -83,16 +98,15 @@ vagrant up firewall
 
 ## Documentation
 
-- **Quick Start**: [README.md](README.md)
-- **Complete Guide**: [WIREGUARD-MULLVAD-GUIDE.md](WIREGUARD-MULLVAD-GUIDE.md)
-- **Technical Details**: [INTEGRATION-SUMMARY.md](INTEGRATION-SUMMARY.md)
+- **Quick Start**: [README.md](../README.md)
+- **Team Access**: [TEAM-ACCESS.md](../TEAM-ACCESS.md)
+- **WireGuard Guide**: [WIREGUARD-MULLVAD-GUIDE.md](../WIREGUARD-MULLVAD-GUIDE.md)
 - **Architecture**: [DEPLOYMENT-FLOW.md](DEPLOYMENT-FLOW.md)
 
 ## Lab Network
 
 ```
 Firewall: 10.20.0.2 (gateway with WireGuard)
-OpenRelik: 10.20.0.30 (routes through firewall)
 REMnux: 10.20.0.20 (routes through firewall)
 WireGuard Lab IP: 10.66.31.54
 Mullvad DNS: 10.64.0.1
@@ -115,4 +129,4 @@ Mullvad DNS: 10.64.0.1
 
 **Status**: ✅ Integration Complete - Ready for Deployment
 
-For complete documentation, see [WIREGUARD-MULLVAD-GUIDE.md](WIREGUARD-MULLVAD-GUIDE.md)
+For complete documentation, see [WIREGUARD-MULLVAD-GUIDE.md](../WIREGUARD-MULLVAD-GUIDE.md)

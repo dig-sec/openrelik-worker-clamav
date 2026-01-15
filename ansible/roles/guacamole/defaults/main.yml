@@ -1,0 +1,25 @@
+---
+# Guacamole (remote access gateway) defaults
+
+guacamole_state_dir: /opt/guacamole
+guacamole_port: 8081
+guacamole_tls_enabled: false
+guacamole_tls_port: 443
+guacamole_tls_cert_path: "{{ guacamole_state_dir }}/tls/fullchain.pem"
+guacamole_tls_key_path: "{{ guacamole_state_dir }}/tls/privkey.pem"
+guacamole_tls_server_name: ""
+guacamole_tls_self_signed: false
+guacamole_tls_self_signed_days: 365
+guacamole_tls_self_signed_common_name: >-
+  {{ (guacamole_tls_server_name | default('') | length > 0)
+     | ternary(guacamole_tls_server_name, (host_public_ip | default('127.0.0.1')) ~ '.nip.io') }}
+
+guacamole_db_name: guacamole
+guacamole_db_user: guacamole
+guacamole_db_password: ""
+guacamole_db_password_file: "{{ guacamole_state_dir }}/secrets/db_password"
+
+guacamole_postgres_image: "postgres:16"
+guacamole_guacd_image: "guacamole/guacd:1.5.5"
+guacamole_guacamole_image: "guacamole/guacamole:1.5.5"
+guacamole_initdb_path: "{{ guacamole_state_dir }}/initdb/initdb.sql"
