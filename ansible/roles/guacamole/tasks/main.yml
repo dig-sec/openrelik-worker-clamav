@@ -81,6 +81,29 @@
     src: docker-compose.yml.j2
     dest: "{{ guacamole_state_dir }}/docker-compose.yml"
     mode: '0644'
+  register: guacamole_compose_render
+
+- name: Check if PostgreSQL data exists
+  stat:
+    path: "{{ guacamole_state_dir }}/postgres/PG_VERSION"
+  register: postgres_data_exists
+
+- name: Remove old PostgreSQL data if docker-compose changed
+  file:
+    path: "{{ guacamole_state_dir }}/postgres"
+    state: absent
+  when:
+    - guacamole_compose_render.changed
+    - postgres_data_exists.stat.exists
+
+- name: Recreate PostgreSQL data directory
+  file:
+    path: "{{ guacamole_state_dir }}/postgres"
+    state: directory
+    mode: '0755'
+  when:
+    - guacamole_compose_render.changed
+    - postgres_data_exists.stat.exists
 
 - name: Start Guacamole
   command: docker compose up -d

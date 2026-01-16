@@ -4,7 +4,26 @@
 # External hostname for access (from config.yml or override)
 edge_external_hostname: "{{ external_access.hostname | default('localhost') }}"
 edge_use_subdomains: "{{ external_access.use_subdomains | default(false) }}"
-edge_service_subdomains: "{{ external_access.service_subdomains | default({}) }}"
+edge_service_subdomains:
+  guacamole: "{{ external_access.service_subdomains.guacamole | default('guacamole') }}"
+  openrelik: "{{ external_access.service_subdomains.openrelik | default('openrelik') }}"
+  maigret: "{{ external_access.service_subdomains.maigret | default('maigret') }}"
+  kasm: "{{ external_access.service_subdomains.kasm | default('browsers') }}"
+  kasm_tor: "{{ external_access.service_subdomains.kasm_tor | default('tor') }}"
+
+# Authentication settings
+edge_auth_enabled: "{{ auth.enabled | default(false) }}"
+edge_auth_username: "{{ auth.username | default('utgard') }}"
+edge_auth_password: "{{ auth.password | default('') }}"
+edge_auth_protect_landing: "{{ auth.protect_landing | default(false) }}"
+edge_auth_file: "/opt/guacamole/auth/.htpasswd"
+edge_auth_secret_file: "/opt/guacamole/auth/.htpasswd_secret"
+
+# Exempt specific services from edge Basic Auth (they have their own auth)
+edge_auth_exempt_services:
+  guacamole: true
+  openrelik: true
+  kasm: true
 
 portal_tls_cert_path: /opt/guacamole/tls/fullchain.pem
 portal_tls_key_path: /opt/guacamole/tls/privkey.pem

@@ -3,6 +3,21 @@
 # Accessed via nginx reverse proxy on port {{ kasm_proxy_port }}
 # Note: KasmVNC uses WebSocket-based VNC, not compatible with Guacamole/guacd
 
+- name: Load external access configuration
+  include_vars:
+    file: /home/azureuser/git/utgard/config.yml
+    name: config_vars
+  register: config_load
+  failed_when: false
+
+- name: Set external access variables from config
+  set_fact:
+    kasm_external_hostname: "{{ config_vars.external_access.hostname | default(ansible_default_ipv4.address | default('localhost')) }}"
+    kasm_use_subdomains: "{{ config_vars.external_access.use_subdomains | default(false) }}"
+    kasm_subdomain: "{{ config_vars.external_access.service_subdomains.kasm | default('browsers') }}"
+    kasm_tor_subdomain: "{{ config_vars.external_access.service_subdomains.kasm_tor | default('tor') }}"
+  when: config_load is not failed
+
 - name: Ensure Kasm state directories
   file:
     path: "{{ item }}"
@@ -170,11 +185,10 @@
       - "============================================"
       - "Kasm Workspaces deployed successfully!"
       - "============================================"
-      - "Portal: https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/"
-      - ""
-      - "Direct workspace access:"
-      - "  Tor Browser:     https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/tor/"
-      - "  Forensic OSINT:  https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/osint/"
+      - "{% if kasm_use_subdomains | default(false) %}Subdomain access:{% else %}Path-based access:{% endif %}"
+      - "  Portal:          {% if kasm_use_subdomains | default(false) %}https://{{ kasm_subdomain }}.{{ kasm_external_hostname }}/{% else %}https://{{ kasm_external_hostname }}/kasm/{% endif %}"
+      - "  Tor Browser:     {% if kasm_use_subdomains | default(false) %}https://{{ kasm_tor_subdomain | default('tor') }}.{{ kasm_external_hostname }}/{% else %}https://{{ kasm_external_hostname }}/kasm/tor/{% endif %}"
+      - "  Forensic OSINT:  {% if kasm_use_subdomains | default(false) %}https://{{ kasm_subdomain }}.{{ kasm_external_hostname }}/{% else %}https://{{ kasm_external_hostname }}/kasm/osint/{% endif %}"
       - ""
       - "Credentials:"
       - "  User: kasm_user"

@@ -13,6 +13,11 @@
     edge_external_hostname: "{{ config_vars.external_access.hostname | default('localhost') }}"
     edge_use_subdomains: "{{ config_vars.external_access.use_subdomains | default(false) }}"
     edge_service_subdomains: "{{ config_vars.external_access.service_subdomains | default({}) }}"
+    edge_public_ip: "{{ config_vars.host.public_ip | default(ansible_default_ipv4.address | default('')) }}"
+    edge_auth_enabled: "{{ config_vars.auth.enabled | default(false) }}"
+    edge_auth_username: "{{ config_vars.auth.username | default('utgard') }}"
+    edge_auth_password: "{{ config_vars.auth.password | default('') }}"
+    edge_auth_protect_landing: "{{ config_vars.auth.protect_landing | default(false) }}"
   when: config_load is not failed
 
 - name: Install OpenSSL
@@ -26,13 +31,114 @@
     state: directory
     mode: '0755'
 
-- name: Generate self-signed TLS certificate
+- name: Check existing TLS certificate subject (if any)
+  command: openssl x509 -in /opt/guacamole/tls/fullchain.pem -noout -subject
+  register: existing_cert_subject
+  failed_when: false
+  changed_when: false
+
+- name: Decide if TLS needs regeneration
+  set_fact:
+    tls_needs_regen: >-
+      {{ (existing_cert_subject.rc != 0) or
+         (existing_cert_subject.stdout is not defined) or
+         (edge_external_hostname not in existing_cert_subject.stdout) }}
+
+- name: Generate self-signed TLS certificate with SANs
   command: >
     openssl req -x509 -newkey rsa:2048 -keyout /opt/guacamole/tls/privkey.pem
     -out /opt/guacamole/tls/fullchain.pem -days 365 -nodes
-    -subj "/CN={{ ansible_default_ipv4.address | default('localhost') }}"
-  args:
-    creates: /opt/guacamole/tls/fullchain.pem
+    -subj "/CN={{ edge_external_hostname }}"
+    -addext "subjectAltName=DNS:{{ edge_external_hostname }},DNS:*.{{ edge_external_hostname }}{% if edge_public_ip %},IP:{{ edge_public_ip }}{% endif %},DNS:localhost"
+  when: tls_needs_regen | default(true)
+
+- name: Install apache2-utils for htpasswd
+  package:
+    name: apache2-utils
+    state: present
+  when: edge_auth_enabled | default(false)
+
+- name: Create auth directory
+  file:
+    path: "/opt/guacamole/auth"
+    state: directory
+    mode: '0755'
+  when: edge_auth_enabled | default(false)
+
+- name: Check for existing auth password
+  stat:
+    path: "/opt/guacamole/auth/.htpasswd_secret"
+  register: auth_secret_file
+  when: edge_auth_enabled | default(false)
+
+- name: Use provided auth password
+  set_fact:
+    resolved_auth_password: "{{ edge_auth_password }}"
+  when:
+    - edge_auth_enabled | default(false)
+    - edge_auth_password | length > 0
+
+- name: Read existing auth password
+  slurp:
+    src: "/opt/guacamole/auth/.htpasswd_secret"
+  register: existing_auth_password
+  when:
+    - edge_auth_enabled | default(false)
+    - edge_auth_password | length == 0
+    - auth_secret_file.stat.exists
+  failed_when: false
+
+- name: Set auth password from existing file
+  set_fact:
+    resolved_auth_password: "{{ existing_auth_password.content | b64decode | trim }}"
+  when:
+    - edge_auth_enabled | default(false)
+    - edge_auth_password | length == 0
+    - auth_secret_file.stat.exists
+    - existing_auth_password is defined
+    - existing_auth_password.content is defined
+
+- name: Generate random auth password
+  command: openssl rand -base64 16
+  register: generated_auth_password
+  when:
+    - edge_auth_enabled | default(false)
+    - edge_auth_password | length == 0
+    - not auth_secret_file.stat.exists
+
+- name: Set auth password from generation
+  set_fact:
+    resolved_auth_password: "{{ generated_auth_password.stdout | trim }}"
+  when:
+    - edge_auth_enabled | default(false)
+    - edge_auth_password | length == 0
+    - not auth_secret_file.stat.exists
+    - generated_auth_password is defined
+
+- name: Store auth password
+  copy:
+    content: "{{ resolved_auth_password }}"
+    dest: "/opt/guacamole/auth/.htpasswd_secret"
+    mode: '0600'
+  when:
+    - edge_auth_enabled | default(false)
+    - resolved_auth_password is defined
+    - not auth_secret_file.stat.exists
+
+- name: Generate htpasswd file
+  command: >
+    htpasswd -bc /opt/guacamole/auth/.htpasswd 
+    {{ edge_auth_username }} {{ resolved_auth_password }}
+  when:
+    - edge_auth_enabled | default(false)
+    - resolved_auth_password is defined
+
+- name: Set htpasswd file permissions
+  file:
+    path: "/opt/guacamole/auth/.htpasswd"
+    mode: '0644'
+  when: edge_auth_enabled | default(false)
+
 - name: Install nginx
   package:
     name: nginx
@@ -75,3 +181,30 @@
     path: /etc/nginx/sites-enabled/default
     state: absent
   notify: reload nginx
+
+- name: Display authentication information
+  debug:
+    msg:
+      - "============================================"
+      - "Edge Authentication Configuration"
+      - "============================================"
+      - "Status: {% if edge_auth_enabled | default(false) %}Enabled{% else %}Disabled{% endif %}"
+      - "{% if edge_auth_enabled | default(false) %}Username: {{ edge_auth_username }}{% endif %}"
+      - "{% if edge_auth_enabled | default(false) and resolved_auth_password is defined %}Password: {{ resolved_auth_password }}{% endif %}"
+      - "{% if edge_auth_enabled | default(false) %}Landing Page Protected: {% if edge_auth_protect_landing | default(false) %}Yes{% else %}No{% endif %}{% endif %}"
+      - "============================================"
+  when: edge_auth_enabled | default(false)
+
+- name: Display access URLs
+  debug:
+    msg:
+      - "============================================"
+      - "Utgard OSINT Platform - Access URLs"
+      - "============================================"
+      - "{% if edge_use_subdomains | default(false) %}Subdomain Access (preferred):{% else %}Path-Based Access:{% endif %}"
+      - "  Portal:      https://{{ edge_external_hostname }}/"
+      - "{% if edge_use_subdomains | default(false) %}  Guacamole:   https://{{ edge_service_subdomains.guacamole | default('guacamole') }}.{{ edge_external_hostname }}/{% else %}  Guacamole:   https://{{ edge_external_hostname }}/guacamole/{% endif %}"
+      - "{% if edge_use_subdomains | default(false) %}  OpenRelik:   https://{{ edge_service_subdomains.openrelik | default('openrelik') }}.{{ edge_external_hostname }}/{% else %}  OpenRelik:   https://{{ edge_external_hostname }}/openrelik/{% endif %}"
+      - "{% if edge_use_subdomains | default(false) %}  Maigret:     https://{{ edge_service_subdomains.maigret | default('maigret') }}.{{ edge_external_hostname }}/{% else %}  Maigret:     https://{{ edge_external_hostname }}/maigret/{% endif %}"
+      - "{% if edge_use_subdomains | default(false) %}  Kasm:        https://{{ edge_service_subdomains.kasm | default('browsers') }}.{{ edge_external_hostname }}/{% else %}  Kasm:        https://{{ edge_external_hostname }}/kasm/{% endif %}"
+      - "============================================"

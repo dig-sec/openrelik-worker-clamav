@@ -64,8 +64,14 @@ server {
     }
 {% endif %}
 
-    # Landing page - redirect to main portal
+    # Landing page and workspace selection
     location / {
-        return 301 https://$host/;
+        # If subdomains are enabled, default to OSINT workspace on browsers subdomain
+        {% if edge_use_subdomains | default(false) %}
+        return 302 /osint/;
+        {% else %}
+        # If accessed directly at :8443, redirect to main portal /kasm
+        return 301 https://{{ edge_external_hostname }}/kasm/;
+        {% endif %}
     }
 }

@@ -7,6 +7,34 @@
     state: directory
     mode: '0755'
 
+- name: Load external access configuration
+  include_vars:
+    file: /home/azureuser/git/utgard/config.yml
+    name: config_vars
+  register: openrelik_config_load
+  failed_when: false
+
+- name: Derive external access variables
+  set_fact:
+    openrelik_external_hostname: "{{ config_vars.external_access.hostname | default('localhost') }}"
+    openrelik_use_subdomains: "{{ config_vars.external_access.use_subdomains | default(false) }}"
+    openrelik_service_subdomain: "{{ config_vars.external_access.service_subdomains.openrelik | default('forensics') }}"
+  when: openrelik_config_load is not failed
+
+- name: Compute OpenRelik server URL (HTTPS via edge)
+  set_fact:
+    openrelik_server_url: >-
+      {{
+        (
+          openrelik_use_subdomains
+          | ternary(
+              'https://' ~ openrelik_service_subdomain ~ '.' ~ openrelik_external_hostname,
+              'https://' ~ openrelik_external_hostname ~ '/openrelik'
+          )
+        )
+      }}
+  when: openrelik_config_load is not failed
+
 - name: Check if OpenRelik is already installed
   stat:
     path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
@@ -35,9 +63,10 @@
   lineinfile:
     path: "{{ openrelik_install_dir }}/openrelik/config.env"
     regexp: '^OPENRELIK_SERVER_URL='
-    line: "OPENRELIK_SERVER_URL=http://{{ host_public_ip | default('127.0.0.1') }}:{{ openrelik_api_port }}"
+    line: "OPENRELIK_SERVER_URL={{ openrelik_server_url | default('https://' ~ (openrelik_external_hostname | default('localhost')) ~ '/openrelik/api') }}"
   when:
     - openrelik_compose.stat.exists
+  register: openrelik_set_url
 
 - name: Remove stray OpenRelik API bindings
   lineinfile:
@@ -171,6 +200,18 @@
   changed_when: "'Started' in openrelik_start.stderr or 'Created' in openrelik_start.stderr"
   when:
     - openrelik_compose.stat.exists
+
+- name: Restart OpenRelik stack if URL changed
+  command: >
+    docker compose
+      -f docker-compose.yml
+      -f docker-compose.extra-workers.yml
+      up -d
+  args:
+    chdir: "{{ openrelik_install_dir }}/openrelik"
+  when:
+    - openrelik_compose.stat.exists
+    - openrelik_set_url is defined and openrelik_set_url.changed
 
 - name: Wait for OpenRelik UI to be ready
   uri:

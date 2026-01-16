@@ -15,7 +15,7 @@ The Utgard OSINT platform now supports flexible external access configuration th
 ```yaml
 external_access:
   hostname: "20.240.216.254.sslip.io"
-  use_subdomains: false
+  use_subdomains: true
   service_subdomains:
     guacamole: "remote"
     openrelik: "forensics"
@@ -31,16 +31,16 @@ external_access:
 
 ## Access Patterns
 
-### Current (Path-Based) Mode
+### Current (Subdomain) Mode
 
 All services accessible from the same domain with different URL paths:
 
 ```
 https://20.240.216.254.sslip.io/              → Portal landing page
-https://20.240.216.254.sslip.io/guacamole/    → Guacamole remote desktop
-https://20.240.216.254.sslip.io/openrelik/    → OpenRelik forensic analysis
-https://20.240.216.254.sslip.io/maigret/      → Maigret username OSINT
-https://20.240.216.254.sslip.io/kasm/         → Kasm browser workspaces
+https://remote.20.240.216.254.sslip.io/       → Guacamole remote desktop
+https://forensics.20.240.216.254.sslip.io/    → OpenRelik forensic analysis
+https://osint.20.240.216.254.sslip.io/        → Maigret username OSINT
+https://browsers.20.240.216.254.sslip.io/     → Kasm browser workspaces
 ```
 
 **Advantages**:
@@ -49,24 +49,24 @@ https://20.240.216.254.sslip.io/kasm/         → Kasm browser workspaces
 - Simple configuration
 - Works with IP addresses
 
-### Optional (Subdomain) Mode
+### Optional (Path-Based) Mode
 
 Each service on its own subdomain. To enable:
 
 ```yaml
 external_access:
   hostname: "20.240.216.254.sslip.io"
-  use_subdomains: true
+  use_subdomains: false
 ```
 
 Access would then be:
 
 ```
 https://20.240.216.254.sslip.io/              → Portal landing page
-https://remote.20.240.216.254.sslip.io/       → Guacamole
-https://forensics.20.240.216.254.sslip.io/    → OpenRelik
-https://osint.20.240.216.254.sslip.io/        → Maigret
-https://browsers.20.240.216.254.sslip.io/     → Kasm
+https://20.240.216.254.sslip.io/guacamole/    → Guacamole
+https://20.240.216.254.sslip.io/openrelik/    → OpenRelik
+https://20.240.216.254.sslip.io/maigret/      → Maigret
+https://20.240.216.254.sslip.io/kasm/         → Kasm
 ```
 
 To customize subdomain names, modify `service_subdomains`.
@@ -182,7 +182,7 @@ tail -f /var/log/nginx/error.log
 
 ## SSL/TLS Certificates
 
-### Current Setup (Self-Signed)
+### Current Setup (Self-Signed, SAN-aware)
 
 Certificates are auto-generated at first deployment:
 - Location: `/opt/guacamole/tls/`
@@ -191,7 +191,14 @@ Certificates are auto-generated at first deployment:
   - `privkey.pem` (private key)
   - `cert.pem` (certificate)
 
-Generated with 365-day validity from edge role.
+Generated with 365-day validity from edge role, including Subject Alternative Names (SANs):
+
+- DNS: 20.240.216.254.sslip.io
+- DNS: *.20.240.216.254.sslip.io
+- IP: 20.240.216.254
+- DNS: localhost
+
+This avoids browser warnings when using the sslip.io domain and its subdomains, and improves behavior when accessing via raw IP.
 
 ### Bringing Your Own Certificate
 

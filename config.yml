@@ -27,14 +27,32 @@ external_access:
   hostname: "20.240.216.254.sslip.io"
   
   # Use subdomain routing (e.g., openrelik.20.240.216.254.sslip.io)
-  use_subdomains: false
+  use_subdomains: true
   
   # Service subdomains (only used if use_subdomains: true)
   service_subdomains:
-    guacamole: "remote"
-    openrelik: "forensics"
-    maigret: "osint"
+    guacamole: "guacamole"
+    openrelik: "openrelik"
+    maigret: "maigret"
     kasm: "browsers"
+    kasm_tor: "tor"
+
+#------------------------------------------------------------------------------
+# Authentication Configuration
+#------------------------------------------------------------------------------
+auth:
+  # Enable HTTP Basic Auth at edge (nginx)
+  enabled: true
+  
+  # Username for accessing services
+  username: "utgard"
+  
+  # Password (leave empty to auto-generate)
+  # Will be stored in /opt/guacamole/auth/.htpasswd_secret
+  password: ""
+  
+  # Protect landing page (false = landing page is public, services require auth)
+  protect_landing: false
 
 #------------------------------------------------------------------------------
 # Feature Flags
