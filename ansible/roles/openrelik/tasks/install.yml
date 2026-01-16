@@ -71,8 +71,100 @@
   when:
     - openrelik_compose.stat.exists
 
+- name: Read OpenRelik compose file
+  slurp:
+    path: "{{ openrelik_install_dir }}/openrelik/docker-compose.yml"
+  register: openrelik_compose_body
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Derive existing OpenRelik workers
+  set_fact:
+    openrelik_existing_workers: >-
+      {{ (openrelik_compose_body.content | b64decode)
+         | regex_findall('(?m)^\\s*(openrelik-worker-[a-z0-9-]+):\\s*$')
+         | unique }}
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Resolve extra OpenRelik workers
+  set_fact:
+    openrelik_extra_workers_resolved: >-
+      {{ openrelik_extra_workers
+         | rejectattr('service', 'in', openrelik_existing_workers | default([]))
+         | list }}
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Login to OpenRelik registry (optional)
+  command: docker login {{ openrelik_registry_url }} -u {{ openrelik_registry_username }} --password-stdin
+  args:
+    stdin: "{{ openrelik_registry_password }}"
+  register: openrelik_registry_login
+  changed_when: "'Login Succeeded' in openrelik_registry_login.stdout"
+  when:
+    - openrelik_compose.stat.exists
+    - openrelik_registry_username | length > 0
+    - openrelik_registry_password | length > 0
+
+- name: Check OpenRelik worker images
+  command: "docker manifest inspect {{ openrelik_worker_registry }}/{{ item.service }}:{{ item.tag | default(openrelik_worker_tag) }}"
+  register: openrelik_worker_manifest
+  changed_when: false
+  failed_when: false
+  loop: "{{ openrelik_extra_workers_resolved | default(openrelik_extra_workers) }}"
+  when:
+    - openrelik_compose.stat.exists
+    - (openrelik_extra_workers_resolved | default(openrelik_extra_workers) | length) > 0
+
+- name: Collect missing OpenRelik workers
+  set_fact:
+    openrelik_missing_workers: >-
+      {{ openrelik_worker_manifest.results
+         | rejectattr('rc', 'equalto', 0)
+         | map(attribute='item.service')
+         | list }}
+  when:
+    - openrelik_compose.stat.exists
+    - openrelik_worker_manifest is defined
+
+- name: Fail when OpenRelik worker images are missing
+  fail:
+    msg: >-
+      Missing or denied OpenRelik worker images: {{ openrelik_missing_workers | join(', ') }}.
+      Provide tags/registry auth or set openrelik_skip_missing_workers: true to skip unavailable workers.
+  when:
+    - openrelik_compose.stat.exists
+    - openrelik_missing_workers is defined
+    - openrelik_missing_workers | length > 0
+    - not openrelik_skip_missing_workers | default(false)
+
+- name: Filter OpenRelik workers to available images
+  set_fact:
+    openrelik_extra_workers_resolved: >-
+      {{ openrelik_worker_manifest.results
+         | selectattr('rc', 'equalto', 0)
+         | map(attribute='item')
+         | list }}
+  when:
+    - openrelik_compose.stat.exists
+    - openrelik_worker_manifest is defined
+    - openrelik_skip_missing_workers | default(false)
+
+- name: Render OpenRelik extra worker compose
+  template:
+    src: extra-workers.yml.j2
+    dest: "{{ openrelik_install_dir }}/openrelik/docker-compose.extra-workers.yml"
+    mode: '0644'
+  when:
+    - openrelik_compose.stat.exists
+
 - name: Ensure OpenRelik containers are running
-  command: docker compose up -d
+  command: >
+    docker compose
+      -f docker-compose.yml
+      -f docker-compose.extra-workers.yml
+      up -d
   args:
     chdir: "{{ openrelik_install_dir }}/openrelik"
   register: openrelik_start

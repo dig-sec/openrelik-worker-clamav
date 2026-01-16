@@ -1,0 +1,32 @@
+---
+# Docker network configuration
+
+# Container networks for service isolation
+docker_networks:
+  openrelik_default:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.25.0.0/24"
+  maigret_default:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.26.0.0/24"
+  kasm-isolated:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.30.0.0/24"
+  kasm-clearweb:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.31.0.0/24"
+  guacamole_default:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.32.0.0/24"
+
+# Kasm Tor isolation settings
+kasm_tor_interface: eth1
+kasm_tor_gateway: "172.30.0.1"
+kasm_tor_subnet: "172.30.0.0/24"
+kasm_clearweb_gateway: "172.31.0.1"
+kasm_clearweb_subnet: "172.31.0.0/24"

@@ -47,14 +47,6 @@ ansible/
         └── defaults/main.yml
 ```
 
-## Key Improvements
-
-✅ **No Duplication** - Common tasks in single `common/` role
-✅ **Clear Roles** - Each role has obvious purpose
-✅ **Maintainable** - Changes in one place
-✅ **Scalable** - Add new VMs by creating new roles
-✅ **DRY Principle** - Don't Repeat Yourself
-
 ## Playbook Architecture
 
 Each VM playbook includes **two roles**:
@@ -78,13 +70,13 @@ vagrant up    # Automatically runs provisioning with correct playbooks
 cd ansible
 
 # Firewall VM
-ansible-playbook -i inventory.yml playbooks/firewall.yml
+ansible-playbook -i inventory.yml playbooks/firewall.yml -l firewall
 
 # REMnux VM
-ansible-playbook -i inventory.yml playbooks/remnux.yml
+ansible-playbook -i inventory.yml playbooks/remnux.yml -l remnux
 
 # Specific role only
-ansible-playbook -i inventory.yml playbooks/firewall.yml --tags firewall,dns
+ansible-playbook -i inventory.yml playbooks/firewall.yml -l firewall --tags firewall,dns
 
 # Local Host (no VM) - OpenRelik + Guacamole
 # Requires Ansible installed on this host:
@@ -104,7 +96,11 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `openrelik_ui_port`: UI port mapping (default: 8711)
 - `openrelik_api_port`: API port mapping (default: 8710)
 - `openrelik_workers_enabled`: Enable worker containers (default: true)
-- `openrelik_extra_workers`: List of additional worker services merged via `docker-compose.extra-workers.yml` (includes yara/capa/clamav by default)
+- `openrelik_extra_workers`: Desired worker services list; the overlay compose only adds workers missing from the base OpenRelik compose (includes yara, hayabusa, capa, strings, entropy, eztools, exif, regripper, ssdeep, eml, clamav, grep, plaso, extraction, analyzer-config)
+- `openrelik_registry_url`: Container registry for worker images (default: `ghcr.io`)
+- `openrelik_registry_username`: Registry username for private images (optional)
+- `openrelik_registry_password`: Registry password/token (optional)
+- `openrelik_skip_missing_workers`: Skip workers whose images cannot be pulled (default: false)
 
 ### Guacamole
 - `guacamole_port`: HTTP port on host when TLS is disabled (default: 8081)
@@ -126,7 +122,7 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `remnux_ip`: REMnux VM IP for DNS host records (optional)
 - `dnsmasq_domain`: DNS suffix for lab hosts (default: `utgard.local`)
 - `dnsmasq_upstream_servers`: Upstream resolvers list (default: Mullvad + public)
-- WireGuard configs live in the role files: `ansible/roles/firewall/files/se-mma-wg-*.conf`
+- WireGuard configs live in `ansible/roles/firewall/files/private/` (copy from `.conf.example` and keep secrets out of git)
 
 See [WIREGUARD-MULLVAD-GUIDE.md](../WIREGUARD-MULLVAD-GUIDE.md) for complete documentation.
 

@@ -1,0 +1,183 @@
+---
+# Kasm Workspaces installation (Docker-based isolated browsers)
+# Accessed via nginx reverse proxy on port {{ kasm_proxy_port }}
+# Note: KasmVNC uses WebSocket-based VNC, not compatible with Guacamole/guacd
+
+- name: Ensure Kasm state directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ kasm_state_dir }}"
+
+- name: Ensure Kasm secrets directory
+  file:
+    path: "{{ kasm_state_dir }}/secrets"
+    state: directory
+    mode: '0700'
+
+# Password management for Tor workspace
+- name: Use provided Kasm Tor password
+  set_fact:
+    kasm_tor_password_resolved: "{{ kasm_tor_password }}"
+  when: kasm_tor_password | length > 0
+
+- name: Check stored Kasm Tor password
+  stat:
+    path: "{{ kasm_tor_password_file }}"
+  register: kasm_tor_password_stat
+  when: kasm_tor_password | length == 0
+
+- name: Generate Kasm Tor password
+  command: openssl rand -base64 12
+  register: kasm_tor_password_gen
+  when:
+    - kasm_tor_password | length == 0
+    - not kasm_tor_password_stat.stat.exists
+
+- name: Store Kasm Tor password
+  copy:
+    dest: "{{ kasm_tor_password_file }}"
+    content: "{{ kasm_tor_password_gen.stdout }}"
+    mode: '0600'
+  when:
+    - kasm_tor_password | length == 0
+    - not kasm_tor_password_stat.stat.exists
+
+- name: Read stored Kasm Tor password
+  slurp:
+    path: "{{ kasm_tor_password_file }}"
+  register: kasm_tor_password_slurp
+  when:
+    - kasm_tor_password | length == 0
+    - kasm_tor_password_stat.stat.exists | default(false)
+
+- name: Set resolved Kasm Tor password from file
+  set_fact:
+    kasm_tor_password_resolved: "{{ kasm_tor_password_slurp.content | b64decode | trim }}"
+  when:
+    - kasm_tor_password | length == 0
+    - kasm_tor_password_slurp.content is defined
+
+- name: Set resolved Kasm Tor password from generation
+  set_fact:
+    kasm_tor_password_resolved: "{{ kasm_tor_password_gen.stdout }}"
+  when:
+    - kasm_tor_password | length == 0
+    - kasm_tor_password_gen.stdout is defined
+
+# Password management for OSINT workspace
+- name: Use provided Kasm OSINT password
+  set_fact:
+    kasm_osint_password_resolved: "{{ kasm_osint_password }}"
+  when: kasm_osint_password | length > 0
+
+- name: Check stored Kasm OSINT password
+  stat:
+    path: "{{ kasm_osint_password_file }}"
+  register: kasm_osint_password_stat
+  when: kasm_osint_password | length == 0
+
+- name: Generate Kasm OSINT password
+  command: openssl rand -base64 12
+  register: kasm_osint_password_gen
+  when:
+    - kasm_osint_password | length == 0
+    - not kasm_osint_password_stat.stat.exists
+
+- name: Store Kasm OSINT password
+  copy:
+    dest: "{{ kasm_osint_password_file }}"
+    content: "{{ kasm_osint_password_gen.stdout }}"
+    mode: '0600'
+  when:
+    - kasm_osint_password | length == 0
+    - not kasm_osint_password_stat.stat.exists
+
+- name: Read stored Kasm OSINT password
+  slurp:
+    path: "{{ kasm_osint_password_file }}"
+  register: kasm_osint_password_slurp
+  when:
+    - kasm_osint_password | length == 0
+    - kasm_osint_password_stat.stat.exists | default(false)
+
+- name: Set resolved Kasm OSINT password from file
+  set_fact:
+    kasm_osint_password_resolved: "{{ kasm_osint_password_slurp.content | b64decode | trim }}"
+  when:
+    - kasm_osint_password | length == 0
+    - kasm_osint_password_slurp.content is defined
+
+- name: Set resolved Kasm OSINT password from generation
+  set_fact:
+    kasm_osint_password_resolved: "{{ kasm_osint_password_gen.stdout }}"
+  when:
+    - kasm_osint_password | length == 0
+    - kasm_osint_password_gen.stdout is defined
+
+# Pull images
+- name: Pull Kasm Tor Browser image
+  community.docker.docker_image:
+    name: "{{ kasm_tor_image }}"
+    source: pull
+  when: kasm_tor_enabled
+
+- name: Pull Kasm Forensic OSINT image
+  community.docker.docker_image:
+    name: "{{ kasm_osint_image }}"
+    source: pull
+  when: kasm_osint_enabled
+
+# Render nginx proxy config
+- name: Render Kasm nginx proxy config
+  template:
+    src: nginx-kasm.conf.j2
+    dest: "{{ kasm_state_dir }}/nginx-kasm.conf"
+    mode: '0644'
+  notify: restart kasm
+
+# Render and deploy docker-compose
+- name: Render Kasm docker-compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ kasm_state_dir }}/docker-compose.yml"
+    mode: '0644'
+  notify: restart kasm
+
+- name: Start Kasm workspaces
+  community.docker.docker_compose_v2:
+    project_src: "{{ kasm_state_dir }}"
+    state: present
+  register: kasm_up
+
+# Apply network isolation for Tor container
+- name: Show Kasm container status
+  command: docker compose ps
+  args:
+    chdir: "{{ kasm_state_dir }}"
+  register: kasm_ps
+  changed_when: false
+
+- name: Display Kasm status
+  debug:
+    msg: "{{ kasm_ps.stdout_lines }}"
+
+- name: Display Kasm access information
+  debug:
+    msg:
+      - "============================================"
+      - "Kasm Workspaces deployed successfully!"
+      - "============================================"
+      - "Portal: https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/"
+      - ""
+      - "Direct workspace access:"
+      - "  Tor Browser:     https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/tor/"
+      - "  Forensic OSINT:  https://{{ ansible_default_ipv4.address | default('localhost') }}:{{ kasm_proxy_port }}/osint/"
+      - ""
+      - "Credentials:"
+      - "  User: kasm_user"
+      - "  Tor Password: {{ kasm_tor_password_resolved }}"
+      - "  OSINT Password: {{ kasm_osint_password_resolved }}"
+      - "============================================"

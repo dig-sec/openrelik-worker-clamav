@@ -1,0 +1,40 @@
+---
+# Maigret installation (Docker-based)
+
+- name: Ensure Maigret state directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ maigret_state_dir }}"
+    - "{{ maigret_reports_dir }}"
+
+- name: Pull Maigret Docker image
+  command: docker pull {{ maigret_image }}
+  register: maigret_pull
+  changed_when: "'Downloaded newer image' in maigret_pull.stdout or 'Image is up to date' not in maigret_pull.stdout"
+
+- name: Render Maigret docker-compose
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ maigret_state_dir }}/docker-compose.yml"
+    mode: '0644'
+
+- name: Start Maigret
+  command: docker compose up -d
+  args:
+    chdir: "{{ maigret_state_dir }}"
+  register: maigret_up
+  changed_when: "'Created' in maigret_up.stderr or 'Started' in maigret_up.stderr"
+
+- name: Show Maigret container status
+  command: docker compose ps
+  args:
+    chdir: "{{ maigret_state_dir }}"
+  register: maigret_ps
+  changed_when: false
+
+- name: Display Maigret status
+  debug:
+    msg: "{{ maigret_ps.stdout_lines }}"

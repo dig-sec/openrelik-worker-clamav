@@ -1,0 +1,18 @@
+{% set workers = openrelik_extra_workers_resolved | default(openrelik_extra_workers) %}
+{% if openrelik_workers_enabled and workers | length > 0 %}
+services:
+{% for worker in workers %}
+  {{ worker.service }}:
+    container_name: {{ worker.service }}
+    image: {{ openrelik_worker_registry }}/{{ worker.service }}:{{ worker.tag | default(openrelik_worker_tag) }}
+    restart: always
+    environment:
+      - REDIS_URL=redis://openrelik-redis:6379
+    volumes:
+      - ./data:/usr/share/openrelik/data
+    command: >
+      celery --app=src.app worker --task-events{% if worker.concurrency %} --concurrency={{ worker.concurrency }}{% endif %} --loglevel=INFO -Q {{ worker.service }}
+{% endfor %}
+{% else %}
+services: {}
+{% endif %}

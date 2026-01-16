@@ -16,12 +16,25 @@ host:
   private_ip: "10.1.0.4"
 
 #------------------------------------------------------------------------------
-# Service Ports
+# External Access Configuration
 #------------------------------------------------------------------------------
-service_ports:
-  openrelik_ui: 8711
-  openrelik_api: 8710
-  guacamole: 443
+external_access:
+  # Hostname or IP for external access
+  # Options:
+  #   - IP address: "20.240.216.254"
+  #   - sslip.io subdomain: "20.240.216.254.sslip.io"
+  #   - custom domain: "utgard.example.com"
+  hostname: "20.240.216.254.sslip.io"
+  
+  # Use subdomain routing (e.g., openrelik.20.240.216.254.sslip.io)
+  use_subdomains: false
+  
+  # Service subdomains (only used if use_subdomains: true)
+  service_subdomains:
+    guacamole: "remote"
+    openrelik: "forensics"
+    maigret: "osint"
+    kasm: "browsers"
 
 #------------------------------------------------------------------------------
 # Feature Flags

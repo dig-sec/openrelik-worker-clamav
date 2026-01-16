@@ -6,6 +6,7 @@ enable_wireguard: true
 
 # Default Mullvad endpoint to use when none is specified externally
 wg_endpoint: "se-mma-wg-002"
+wg_endpoint_config_src: "private/{{ wg_endpoint }}.conf"
 
 # DNS (dnsmasq)
 dnsmasq_domain: "utgard.local"

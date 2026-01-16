@@ -5,10 +5,13 @@
   become: yes
   vars:
     common_configure_network: false
-    guacamole_tls_enabled: true
-    guacamole_tls_self_signed: true
+    openrelik_skip_missing_workers: true
 
   roles:
-    - common       # Base tools + Docker
+    - base         # Base tools + Docker
+    - network      # Docker networks + network isolation
+    - edge         # Unified HTTPS entry point
     - openrelik    # Run OpenRelik on host via Docker
     - guacamole    # Remote access portal
+    - maigret      # OSINT username search tool
+    - kasm         # Isolated browser workspaces (Tor + OSINT)

@@ -1,0 +1,86 @@
+---
+# Docker network setup and isolation
+
+- name: Create Docker networks
+  community.docker.docker_network:
+    name: "{{ item.key }}"
+    driver: "{{ item.value.driver }}"
+    ipam_config: "{{ item.value.ipam_config | default(omit) }}"
+    labels:
+      "com.docker.compose.network": "default"
+      "com.docker.compose.project": "{{ item.key.split('_')[0] }}"
+    state: present
+  loop: "{{ docker_networks | dict2items }}"
+  tags:
+    - docker_networks
+
+- name: Install iptables
+  package:
+    name: iptables
+    state: present
+
+- name: Set up Kasm Tor network isolation (iptables)
+  block:
+    - name: Allow established connections to Tor bridge
+      command: >
+        iptables -A FORWARD -i {{ kasm_tor_interface }}
+        -s {{ kasm_tor_subnet }}
+        -d {{ kasm_tor_gateway }}
+        -j ACCEPT
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Allow Tor bridge responses
+      command: >
+        iptables -A FORWARD -i docker0
+        -s {{ kasm_tor_gateway }}
+        -d {{ kasm_tor_subnet }}
+        -j ACCEPT
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Block outbound connections from Tor container to external networks
+      command: >
+        iptables -A FORWARD -o eth0
+        -s {{ kasm_tor_subnet }}
+        ! -d {{ kasm_tor_gateway }}
+        -j DROP
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Block outbound DNS from Tor container
+      command: >
+        iptables -A OUTPUT -o {{ kasm_tor_interface }}
+        -p udp --dport 53
+        -j DROP
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Allow ClearWeb container outbound
+      command: >
+        iptables -A FORWARD -o eth0
+        -s {{ kasm_clearweb_subnet }}
+        -j ACCEPT
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Allow ClearWeb container responses
+      command: >
+        iptables -A FORWARD -i eth0
+        -d {{ kasm_clearweb_subnet }}
+        -m state --state ESTABLISHED,RELATED
+        -j ACCEPT
+      changed_when: false
+      ignore_errors: yes
+
+  tags:
+    - network_isolation
+    - kasm_isolation
+
+- name: Save iptables rules (if iptables-persistent installed)
+  shell: iptables-save > /etc/iptables/rules.v4
+  when: ansible_os_family == "Debian"
+  ignore_errors: yes
+  changed_when: false
+  tags:
+    - network_isolation

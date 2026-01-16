@@ -1,4 +1,4 @@
-# Managed by Ansible (common role)
+# Managed by Ansible (base role)
 {% if dns_resolver is defined and dns_resolver | length > 0 %}
 nameserver {{ dns_resolver }}
 {% endif %}

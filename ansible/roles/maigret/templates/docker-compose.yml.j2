@@ -1,0 +1,11 @@
+services:
+  maigret:
+    image: {{ maigret_image }}
+    restart: unless-stopped
+    command: --web 5000
+    ports:
+      - "{{ maigret_port }}:5000"
+    volumes:
+      - {{ maigret_reports_dir }}:/app/reports
+    environment:
+      - PYTHONUNBUFFERED=1

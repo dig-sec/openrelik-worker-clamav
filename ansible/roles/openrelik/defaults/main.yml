@@ -3,14 +3,20 @@
 # Uses official install script from https://github.com/openrelik/openrelik-deploy
 
 openrelik_install_dir: /opt/openrelik
+openrelik_install_ref: "main"
+openrelik_install_checksum: ""
 openrelik_api_port: 8710
 openrelik_ui_port: 8711
 openrelik_workers_enabled: true
 openrelik_extra_workers:
-  - service: openrelik-worker-clamav
+  - service: openrelik-worker-yara
     concurrency: 2
+  - service: openrelik-worker-hayabusa
+    concurrency: 4
   - service: openrelik-worker-capa
     concurrency: 1
+  - service: openrelik-worker-strings
+    concurrency: 4
   - service: openrelik-worker-eml
     concurrency: 1
   - service: openrelik-worker-entropy
@@ -19,11 +25,23 @@ openrelik_extra_workers:
     concurrency: 1
   - service: openrelik-worker-exif
     concurrency: 1
+  - service: openrelik-worker-grep
+    concurrency: 4
+  - service: openrelik-worker-plaso
+    concurrency: 2
+  - service: openrelik-worker-extraction
+    concurrency: 2
+  - service: openrelik-worker-analyzer-config
+    concurrency: 4
   - service: openrelik-worker-regripper
     concurrency: 1
   - service: openrelik-worker-ssdeep
     concurrency: 1
-  - service: openrelik-worker-yara
+  - service: openrelik-worker-clamav
     concurrency: 2
 openrelik_worker_registry: ghcr.io/openrelik
 openrelik_worker_tag: latest
+openrelik_registry_url: ghcr.io
+openrelik_registry_username: ""
+openrelik_registry_password: ""
+openrelik_skip_missing_workers: false

@@ -1,0 +1,8 @@
+---
+- name: restart kasm
+  community.docker.docker_compose_v2:
+    project_src: "{{ kasm_state_dir }}"
+    state: restarted
+
+- name: Save iptables rules
+  command: netfilter-persistent save

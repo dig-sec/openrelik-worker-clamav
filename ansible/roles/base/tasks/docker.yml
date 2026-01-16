@@ -27,8 +27,10 @@
       - docker-ce
       - docker-ce-cli
       - containerd.io
+      - docker-compose-plugin
       - docker-compose
     state: present
+    update_cache: yes
 
 - name: Enable Docker service
   systemd:

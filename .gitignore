@@ -37,6 +37,7 @@ venv/
 *.pem
 *.key
 settings.toml
+ansible/roles/firewall/files/private/
 
 # Local config (use config.yml.example as template)
 provision/config.yml

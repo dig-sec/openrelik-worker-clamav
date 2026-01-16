@@ -30,13 +30,32 @@
         mode: '0600'
       when: (wg0_conf | default('') | length) > 0
 
+    - name: Check for WireGuard endpoint config
+      stat:
+        path: "{{ role_path }}/files/{{ wg_endpoint_config_src }}"
+      delegate_to: localhost
+      run_once: true
+      register: wg_endpoint_config_stat
+      when: (wg0_conf | default('') | length) == 0
+
+    - name: Fail when WireGuard config is missing
+      fail:
+        msg: >-
+          WireGuard config {{ role_path }}/files/{{ wg_endpoint_config_src }} not found.
+          Provide wg0_conf or place a real config in ansible/roles/firewall/files/private/.
+      when:
+        - (wg0_conf | default('') | length) == 0
+        - not wg_endpoint_config_stat.stat.exists
+
     # Method 2: Select Mullvad endpoint from role files directory
     - name: Deploy WireGuard config from endpoint selection
       copy:
-        src: "{{ wg_endpoint }}.conf"
+        src: "{{ wg_endpoint_config_src }}"
         dest: /etc/wireguard/wg0.conf
         mode: '0600'
-      when: (wg0_conf | default('') | length) == 0
+      when:
+        - (wg0_conf | default('') | length) == 0
+        - wg_endpoint_config_stat.stat.exists
 
     - name: Ensure IPv6 is enabled for WireGuard
       sysctl:

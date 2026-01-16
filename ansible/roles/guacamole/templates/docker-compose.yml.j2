@@ -20,27 +20,11 @@ services:
     depends_on:
       - guacd
       - guacamole-db
-{% if not guacamole_tls_enabled | default(false) %}
     ports:
-      - "{{ guacamole_port }}:8080"
-{% endif %}
+      - "127.0.0.1:8080:8080"
     environment:
       GUACD_HOSTNAME: guacd
       POSTGRESQL_HOSTNAME: guacamole-db
       POSTGRESQL_DATABASE: {{ guacamole_db_name }}
       POSTGRESQL_USER: {{ guacamole_db_user }}
       POSTGRESQL_PASSWORD: {{ guacamole_db_password_resolved }}
-
-{% if guacamole_tls_enabled | default(false) %}
-  guacamole-proxy:
-    image: nginx:alpine
-    restart: unless-stopped
-    depends_on:
-      - guacamole
-    ports:
-      - "{{ guacamole_tls_port }}:{{ guacamole_tls_port }}"
-    volumes:
-      - {{ guacamole_state_dir }}/nginx:/etc/nginx/conf.d:ro
-      - {{ guacamole_tls_cert_path }}:/etc/nginx/tls/fullchain.pem:ro
-      - {{ guacamole_tls_key_path }}:/etc/nginx/tls/privkey.pem:ro
-{% endif %}

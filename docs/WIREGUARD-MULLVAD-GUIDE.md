@@ -39,6 +39,8 @@ Three Swedish Mullvad exit points:
 | se-mma-wg-002.conf | #2 | 193.138.218.80 |
 | se-mma-wg-003.conf | #3 | 193.138.218.83 |
 
+Copy the matching `.conf.example` into `ansible/roles/firewall/files/private/` and replace placeholders.
+
 ## Deployment
 
 ### Option 1: Use Default Endpoint (SE-MMA-002)
@@ -114,7 +116,8 @@ To route your host machine through the same Mullvad exit:
 
 ```bash
 # Copy host config
-sudo cp ansible/roles/firewall/files/host-client.conf /etc/wireguard/utgard.conf
+sudo cp ansible/roles/firewall/files/host-client.conf.example /etc/wireguard/utgard.conf
+sudo nano /etc/wireguard/utgard.conf
 
 # Connect
 sudo wg-quick up utgard
@@ -141,7 +144,7 @@ wg show
 sudo wg-quick down wg0
 
 # Copy new endpoint config
-sudo cp /tmp/ansible/roles/firewall/files/se-mma-wg-003.conf /etc/wireguard/wg0.conf
+sudo cp /tmp/ansible/roles/firewall/files/private/se-mma-wg-003.conf /etc/wireguard/wg0.conf
 
 # Bring up with new endpoint
 sudo wg-quick up wg0
@@ -259,5 +262,5 @@ Endpoint = [Mullvad IP:51820]
 ## Additional Resources
 
 - Lab README: [README.md](../README.md)
-- WireGuard configs: [ansible/roles/firewall/files/](../ansible/roles/firewall/files/)
+- WireGuard configs: [ansible/roles/firewall/files/](../ansible/roles/firewall/files/) (examples) and [ansible/roles/firewall/files/private/](../ansible/roles/firewall/files/private/) (real configs)
 - Ansible provisioning: [ansible/README.md](../ansible/README.md)

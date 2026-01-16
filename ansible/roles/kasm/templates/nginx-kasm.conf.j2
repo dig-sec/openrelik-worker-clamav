@@ -1,0 +1,71 @@
+# Kasm Proxy Configuration
+# Nginx reverse proxy for KasmVNC WebSocket connections
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+{% if kasm_tor_enabled %}
+upstream kasm-tor {
+    server kasm-tor-browser:6901;
+}
+{% endif %}
+
+{% if kasm_osint_enabled %}
+upstream kasm-osint {
+    server kasm-forensic-osint:6901;
+}
+{% endif %}
+
+server {
+    listen 443 ssl;
+    server_name _;
+
+    ssl_certificate /etc/nginx/tls/fullchain.pem;
+    ssl_certificate_key /etc/nginx/tls/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+
+{% if kasm_tor_enabled %}
+    # Tor Browser workspace (isolated network)
+    location /tor/ {
+        proxy_pass https://kasm-tor/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_buffering off;
+    }
+{% endif %}
+
+{% if kasm_osint_enabled %}
+    # OSINT workspace (clearweb network)
+    location /osint/ {
+        proxy_pass https://kasm-osint/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_ssl_verify off;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+        proxy_buffering off;
+    }
+{% endif %}
+
+    # Landing page - redirect to main portal
+    location / {
+        return 301 https://$host/;
+    }
+}

@@ -40,7 +40,7 @@ curl https://am.i.mullvad.net/json | jq '.ip'  # Should show Mullvad IP
 ### Guacamole
 ```bash
 # Web UI for RDP/SSH access
-https://20.240.216.254.nip.io/guacamole
+https://20.240.216.254.sslip.io/guacamole
 ```
 
 ### Check WireGuard Status
@@ -55,7 +55,7 @@ ip route show             # Routing table
 ```bash
 vagrant ssh firewall
 sudo wg-quick down wg0
-sudo cp /tmp/ansible/roles/firewall/files/se-mma-wg-003.conf /etc/wireguard/wg0.conf
+sudo cp /tmp/ansible/roles/firewall/files/private/se-mma-wg-003.conf /etc/wireguard/wg0.conf
 sudo wg-quick up wg0
 ```
 
@@ -67,7 +67,9 @@ nslookup google.com       # Should use Mullvad DNS (10.64.0.1)
 
 ### Deploy Host Machine VPN (Optional)
 ```bash
-sudo wg-quick up /home/azureuser/git/utgard/ansible/roles/firewall/files/host-client.conf
+sudo cp /home/azureuser/git/utgard/ansible/roles/firewall/files/host-client.conf.example /etc/wireguard/utgard.conf
+sudo nano /etc/wireguard/utgard.conf
+sudo wg-quick up utgard
 curl https://am.i.mullvad.net/json | jq '.'
 sudo wg-quick down utgard
 ```
@@ -99,7 +101,6 @@ vagrant snapshot restore remnux clean
 ## Documentation
 
 - **Quick Start**: [README.md](../README.md)
-- **Team Access**: [TEAM-ACCESS.md](../TEAM-ACCESS.md)
 - **WireGuard Guide**: [WIREGUARD-MULLVAD-GUIDE.md](../WIREGUARD-MULLVAD-GUIDE.md)
 - **Architecture**: [DEPLOYMENT-FLOW.md](DEPLOYMENT-FLOW.md)
 
@@ -115,7 +116,7 @@ Mullvad DNS: 10.64.0.1
 ## Key Files
 
 - `ansible/roles/firewall/tasks/wireguard.yml` - WireGuard setup
-- `ansible/roles/firewall/files/se-mma-wg-*.conf` - Mullvad endpoint configs
+- `ansible/roles/firewall/files/private/se-mma-wg-*.conf` - Mullvad endpoint configs (not committed)
 - `Vagrantfile` - VM definitions (includes WG_ENDPOINT support)
 - `ansible/README.md` - Provisioning documentation
 

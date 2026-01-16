@@ -35,7 +35,7 @@
     │                                     │
     ▼                                     ▼
 ┌─────────────────┐           ┌──────────────────┐
-│ common role     │           │ firewall role    │
+│ base role       │           │ firewall role    │
 ├─────────────────┤           ├──────────────────┤
 │ - Docker        │           │ - DNS (dnsmasq)  │
 │ - Networking    │           │ - Firewall       │
@@ -192,7 +192,7 @@
    ↓
 6. WireGuard task executes:
    - Install WireGuard
-   - Copy ansible/roles/firewall/files/se-mma-wg-002.conf
+   - Copy ansible/roles/firewall/files/private/se-mma-wg-002.conf
    - Enable wg0 interface
    - Verify connectivity
    ↓
@@ -209,7 +209,7 @@
    → Uses: se-mma-wg-001
    ↓
 3. Same as above, but step 6 uses:
-   - Copy ansible/roles/firewall/files/se-mma-wg-001.conf
+   - Copy ansible/roles/firewall/files/private/se-mma-wg-001.conf
    - Connects to 193.138.218.220 instead
 ```
 
@@ -243,6 +243,7 @@
                                │
                     ┌──────────▼──────────────┐
                     │ Copy roles/firewall/files/ │
+                    │ private/                   │
                     │ {{ wg_endpoint }}.conf     │
                     │ to /etc/wireguard          │
                     └──────────┬─────────────┘
@@ -295,11 +296,11 @@ Vagrantfile
          │
          └──► ansible/roles/firewall/tasks/wireguard.yml
               │
-              ├──► ansible/roles/firewall/files/se-mma-wg-001.conf
+              ├──► ansible/roles/firewall/files/private/se-mma-wg-001.conf
               │
-              ├──► ansible/roles/firewall/files/se-mma-wg-002.conf
+              ├──► ansible/roles/firewall/files/private/se-mma-wg-002.conf
               │
-              └──► ansible/roles/firewall/files/se-mma-wg-003.conf
+              └──► ansible/roles/firewall/files/private/se-mma-wg-003.conf
 ```
 
 ## Endpoint Selection Matrix

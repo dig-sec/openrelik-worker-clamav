@@ -1,0 +1,77 @@
+---
+# Portal tasks - setup host nginx and landing page
+
+- name: Load external access configuration
+  include_vars:
+    file: /home/azureuser/git/utgard/config.yml
+    name: config_vars
+  register: config_load
+  failed_when: false
+
+- name: Set external access variables from config
+  set_fact:
+    edge_external_hostname: "{{ config_vars.external_access.hostname | default('localhost') }}"
+    edge_use_subdomains: "{{ config_vars.external_access.use_subdomains | default(false) }}"
+    edge_service_subdomains: "{{ config_vars.external_access.service_subdomains | default({}) }}"
+  when: config_load is not failed
+
+- name: Install OpenSSL
+  package:
+    name: openssl
+    state: present
+
+- name: Create TLS directory
+  file:
+    path: "/opt/guacamole/tls"
+    state: directory
+    mode: '0755'
+
+- name: Generate self-signed TLS certificate
+  command: >
+    openssl req -x509 -newkey rsa:2048 -keyout /opt/guacamole/tls/privkey.pem
+    -out /opt/guacamole/tls/fullchain.pem -days 365 -nodes
+    -subj "/CN={{ ansible_default_ipv4.address | default('localhost') }}"
+  args:
+    creates: /opt/guacamole/tls/fullchain.pem
+- name: Install nginx
+  package:
+    name: nginx
+    state: present
+
+- name: Ensure nginx service is enabled
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+
+- name: Create portal web directory
+  file:
+    path: "{{ portal_web_root }}"
+    state: directory
+    mode: '0755'
+
+- name: Deploy portal landing page
+  copy:
+    src: index.html
+    dest: "{{ portal_web_root }}/index.html"
+    mode: '0644'
+
+- name: Render portal nginx configuration
+  template:
+    src: nginx-portal.conf.j2
+    dest: /etc/nginx/sites-available/utgard.conf
+    mode: '0644'
+  notify: reload nginx
+
+- name: Enable Utgard nginx site
+  file:
+    src: /etc/nginx/sites-available/utgard.conf
+    dest: /etc/nginx/sites-enabled/utgard.conf
+    state: link
+  notify: reload nginx
+
+- name: Remove default nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx

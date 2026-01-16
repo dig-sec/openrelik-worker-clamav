@@ -1,0 +1,28 @@
+---
+# Kasm Workspaces (isolated browser environments) defaults
+
+kasm_state_dir: /opt/kasm
+kasm_shm_size: "512m"
+kasm_proxy_port: 8443
+
+# TLS settings (reuse Guacamole certs by default)
+kasm_tls_cert_path: "/opt/guacamole/tls/fullchain.pem"
+kasm_tls_key_path: "/opt/guacamole/tls/privkey.pem"
+
+# Tor Browser workspace (network-isolated, Tor only)
+kasm_tor_enabled: true
+kasm_tor_image: "kasmweb/tor-browser:1.18.0"
+kasm_tor_password: ""
+kasm_tor_password_file: "{{ kasm_state_dir }}/secrets/tor_password"
+
+# Forensic OSINT workspace (clearweb access)
+kasm_osint_enabled: true
+kasm_osint_image: "kasmweb/forensic-osint:1.18.0"
+kasm_osint_password: ""
+kasm_osint_password_file: "{{ kasm_state_dir }}/secrets/osint_password"
+
+# Network isolation settings
+kasm_isolated_network: "kasm-isolated"
+kasm_isolated_subnet: "172.30.0.0/24"
+kasm_clearweb_network: "kasm-clearweb"
+kasm_clearweb_subnet: "172.31.0.0/24"

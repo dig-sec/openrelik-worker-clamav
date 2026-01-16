@@ -1,0 +1,13 @@
+# WireGuard Client Configuration for Utgard Lab
+# Copy to your host, replace placeholders, and use:
+#   sudo wg-quick up ./client.conf
+
+[Interface]
+PrivateKey = REPLACE_WITH_PRIVATE_KEY
+Address = REPLACE_WITH_CLIENT_IP/32
+
+[Peer]
+PublicKey = REPLACE_WITH_PUBLIC_KEY
+Endpoint = REPLACE_WITH_FIREWALL_ENDPOINT
+AllowedIPs = 10.20.0.0/24
+PersistentKeepalive = 25

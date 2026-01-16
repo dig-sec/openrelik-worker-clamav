@@ -1,0 +1,7 @@
+---
+# Maigret (OSINT username search tool) defaults
+
+maigret_state_dir: /opt/maigret
+maigret_port: 5000
+maigret_image: "soxoj/maigret:latest"
+maigret_reports_dir: "{{ maigret_state_dir }}/reports"
