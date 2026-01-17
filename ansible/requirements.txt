@@ -1,0 +1,19 @@
+# Ansible Community Collections Required
+
+This project uses Ansible roles that require additional community collections. Install them before provisioning:
+
+```bash
+# Install required collections
+ansible-galaxy collection install community.docker
+ansible-galaxy collection install community.windows
+ansible-galaxy collection install ansible.windows
+
+# Or install from requirements file
+ansible-galaxy collection install -r requirements.yml
+```
+
+## Collections Used
+
+- **community.docker**: Docker modules for Linux services (OpenRelik, Guacamole, Kasm, Maigret)
+- **community.windows**: Windows-specific modules (win_user, win_service, win_regedit, etc.)
+- **ansible.windows**: Core Windows support (win_shell, win_reboot, etc.)

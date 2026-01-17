@@ -1,0 +1,36 @@
+---
+# Configure Windows Defender for analysis lab
+
+- name: Set Defender realtime protection (disabled)
+  win_shell: |
+    Set-MpPreference -DisableRealtimeMonitoring $true
+  changed_when: false
+  failed_when: false
+
+- name: Disable Defender Cloud protection
+  win_shell: |
+    Set-MpPreference -MAPSReporting Disabled
+  changed_when: false
+  failed_when: false
+
+- name: Disable Defender automatic sample submission
+  win_shell: |
+    Set-MpPreference -SubmitSamplesConsent NeverSend
+  changed_when: false
+  failed_when: false
+
+- name: Add analysis directories to Defender exclusions
+  win_shell: |
+    Add-MpPreference -ExclusionPath "C:\tools\analysis", "C:\samples", "C:\tmp\uploads"
+  changed_when: false
+  failed_when: false
+
+- name: Display Defender configuration
+  win_shell: |
+    Get-MpPreference | Select-Object DisableRealtimeMonitoring, MAPSReporting, SubmitSamplesConsent | Format-List
+  register: defender_config
+  changed_when: false
+
+- name: Show Defender status
+  debug:
+    msg: "{{ defender_config.stdout_lines }}"

@@ -1,140 +1,151 @@
-# Utgard Lab Environment
+# Utgard OSINT Platform
 
-A simplified OSINT and forensics lab built with Vagrant, Ansible, and Docker.
+Utgard is a turnkey OSINT and DFIR lab that provisions a small virtual network and a suite of containerized services behind a unified HTTPS portal. It uses Vagrant (libvirt), Ansible, Docker, and Nginx to deploy:
 
-## Architecture
+- Firewall/Gateway VM with nftables + dnsmasq + optional Mullvad WireGuard egress
+- REMnux VM for malware analysis (with RDP)
+- Optional Windows 10 analysis VM (Sysmon + Sysinternals + tools)
+- Host services: OpenRelik (forensic pipeline), Kasm Workspaces (isolated browsers incl. Tor), Guacamole (remote desktop gateway), Maigret (username OSINT)
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Azure Host (20.240.216.254)                  │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │ Guacamole   │  │  OpenRelik  │  │   Vagrant VMs           │  │
-│  │ (remote UI) │  │  (forensics)│  │  ┌─────────┐ ┌────────┐ │  │
-│  │ :443        │  │  :8711      │  │  │Firewall │→│REMnux  │ │  │
-│  └──────┬──────┘  └─────────────┘  │  │ (WG)    │ │(RDP)   │ │  │
-│         │                          │  └─────────┘ └────────┘ │  │
-│         │  Browser access          └─────────────────────────┘  │
-│         └──────────────────────────────────────────────────────►│
-└─────────────────────────────────────────────────────────────────┘
-```
+The edge role generates a TLS cert and exposes all services via a single hostname, with optional subdomain routing and HTTP Basic Auth.
 
-## Prereqs (Host)
+## Highlights
+- Unified HTTPS portal with path or subdomain routing
+- Self-signed TLS certificate generation (or use your own)
+- Optional Basic Auth at the edge (per-service exemptions)
+- Clean Docker network isolation, incl. Tor-only workspace
+- Minimal, reproducible VM provisioning with Ansible Local
 
-- Ubuntu 22.04+ (or compatible Debian-based) with hardware virtualization enabled.
-- Vagrant with the `vagrant-libvirt` plugin.
-- libvirt/KVM tooling available on the host.
+## Repository Layout
+- `Vagrantfile`: Defines two VMs: `firewall` and `remnux`, passes lab vars to Ansible
+- `config.yml`: Central config for network, external access, auth, features, VM resources
+- `ansible/`: Ansible cfg, inventory, playbooks, and roles
+  - `playbooks/firewall.yml`: Provisions the firewall VM
+  - `playbooks/remnux.yml`: Provisions the REMnux VM
+  - `playbooks/host.yml`: Provisions host services and edge portal
+  - `roles/`: Roles for `base`, `firewall`, `remnux`, `edge`, `openrelik`, `guacamole`, `maigret`, `kasm`, `network`
+- `docs/`: Additional guides (getting started, configuration, roles, access)
 
+## Prerequisites
+- Linux host with libvirt (or adapt Vagrant provider)
+- Vagrant with libvirt provider
+- Ansible (on host) and `community.docker` collection
+- Docker Engine + Docker Compose plugin
+
+Install Ansible collection:
 ```bash
-sudo apt update
-sudo apt install -y qemu-kvm libvirt-daemon-system libvirt-clients bridge-utils vagrant
-vagrant plugin install vagrant-libvirt
-sudo usermod -aG libvirt $USER
+ansible-galaxy collection install community.docker
 ```
 
-Log out/in after the group change so Vagrant can access libvirt.
+## Configure
+Edit `config.yml` to fit your environment:
+- `lab.*`: Lab subnet, netmask, static IPs for firewall and REMnux
+- `external_access.*`: Public hostname or IP; set `use_subdomains: true` to route services on subdomains (e.g., `guacamole.<host>`)
+- `auth.*`: Enable edge HTTP Basic Auth; set username/password; choose whether to protect the landing page
+- `features.*`: Enable REMnux snapshot management; optionally enable WireGuard (see Notes)
+- `resources.*`: VM memory/CPU sizing
+
+Example uses sslip.io:
+```yaml
+external_access:
+  hostname: "20.240.216.254.sslip.io"
+  use_subdomains: true
+```
 
 ## Quick Start
-
-### 1. Install Ansible on Host
+1) Bring up VMs (firewall + remnux):
 ```bash
-sudo apt update && sudo apt install -y ansible-core
+vagrant up
 ```
 
-### 2. Provision Host Services (OpenRelik + Guacamole)
+2) Provision host services and portal:
 ```bash
-cd /home/azureuser/git/utgard/ansible
-sudo ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
+cd ansible
+ansible-playbook playbooks/host.yml
 ```
 
-### 3. Access Services
-The **Edge** role (unified HTTPS portal) handles all service routing:
+3) Access the portal and services:
+- Portal: `https://<hostname>/` (or just the root domain if subdomains are enabled)
+- Guacamole: `https://guacamole.<hostname>/` or `https://<hostname>/guacamole/`
+- OpenRelik: `https://openrelik.<hostname>/` or `https://<hostname>/openrelik/`
+- Maigret: `https://maigret.<hostname>/` or `https://<hostname>/maigret/`
+- Kasm (OSINT): `https://browsers.<hostname>/` or `https://<hostname>/kasm/`
+- Kasm (Tor): `https://tor.<hostname>/` or `https://<hostname>/kasm/tor/`
 
-- **Portal Landing Page**: https://20.240.216.254/ (main entry point)
-- **Guacamole**: https://20.240.216.254/guacamole (remote access, RDP/SSH broker)
-- **OpenRelik**: https://20.240.216.254/openrelik (forensic artifacts analysis)
-- **Maigret**: https://20.240.216.254/maigret (username OSINT search across 3000+ sites)
-- **Kasm Workspaces**: https://20.240.216.254:8443 (isolated browsers with Tor & OSINT)
+On first run, the edge role prints access URLs and any generated Basic Auth credentials.
 
-Guacamole login: `guacadmin` / `guacadmin` (change password on first login). Self-signed certificate used by default.
+## Playbooks
+- `playbooks/firewall.yml`: Applies `base` + `firewall` to the firewall VM
+- `playbooks/remnux.yml`: Applies `base` + `remnux` to the REMnux VM
+- `playbooks/windows.yml`: Applies `windows-analysis` to the Windows VM (if enabled)
+- `playbooks/host.yml`: Applies `base`, `network`, `edge`, `openrelik`, `guacamole`, `maigret`, `kasm` on the host
 
-### 4. Deploy VMs
-```bash
-vagrant up firewall
-vagrant up remnux
+## Windows Analysis VM (Optional)
+An optional Windows 10 analysis VM can be added to the lab for malware detonation and reverse engineering:
+- Sysmon + SwiftOnSecurity config for comprehensive logging
+- Sysinternals Suite (Procmon, Procexp, Autoruns, TCPView, etc.)
+- Analysis tools: FLOSS, PE-sieve, x64dbg, Python, Wireshark
+- PowerShell logging and Windows Defender configured
+- Accessed via RDP through Guacamole
+
+Enable in `config.yml`:
+```yaml
+features:
+  windows_analysis_vm: true
 ```
 
-## Configuration
-
-Edit `config.yml` to adjust IPs, ports, VM resources, and feature flags. Environment variables like `WG_ENDPOINT` override the config during provisioning.
-
-WireGuard configs are not committed. Copy the matching `.conf.example` from `ansible/roles/firewall/files/` into `ansible/roles/firewall/files/private/` and replace placeholders, or set `wg0_conf` when provisioning.
-
-## Service Architecture
-
-### Base Role
-Sets up Docker, system dependencies, and networking foundation.
-
-### Network Role
-Manages Docker networks for service isolation:
-- `openrelik_default` (172.25.0.0/24) – OpenRelik workers
-- `maigret_default` (172.26.0.0/24) – Maigret container
-- `guacamole_default` (172.32.0.0/24) – Guacamole + PostgreSQL
-- `kasm-isolated` (172.30.0.0/24) – Tor browser (restricted outbound)
-- `kasm-clearweb` (172.31.0.0/24) – OSINT browser (full internet)
-
-Applies iptables rules to isolate Tor container (Tor-only traffic, no DNS leaks).
-
-### Edge Role (Unified HTTPS Portal)
-Host-level Nginx reverse proxy that:
-- Listens on 443 (HTTPS) and 80 (redirect to HTTPS)
-- Serves unified landing page at `/`
-- Routes `/guacamole/` → Guacamole port 8080
-- Routes `/openrelik/` → OpenRelik UI port 8711 (with asset rewrite)
-- Routes `/openrelik/api/` → OpenRelik API port 8710
-- Routes `/maigret/` → Maigret port 5000
-- Redirects `:8443` → Kasm WebSocket proxy on separate port
-
-### Service Roles
-- **Guacamole** – Remote access gateway (RDP/SSH broker to VMs)
-- **OpenRelik** – Forensic artifact analysis platform
-- **Maigret** – Username search across 3000+ sites
-- **Kasm** – Isolated browser workspaces (Tor + OSINT)
-
-## Access Points
-
-- **Main Portal**: https://20.240.216.254/
-- **Guacamole**: https://20.240.216.254/guacamole
-- **OpenRelik**: https://20.240.216.254/openrelik
-- **Maigret**: https://20.240.216.254/maigret
-- **Kasm Workspaces**: https://20.240.216.254:8443
-- **VMs**: `vagrant ssh firewall` or `vagrant ssh remnux`
-
-## Guacamole VM Connections
-
-Guacamole brokers RDP/SSH access to lab VMs without exposing ports publicly. Create connections in the UI:
-- **REMnux** (RDP: `10.20.0.20:3389`)
-- **Firewall** (SSH: `10.20.0.2:22`)
-
-## Lab Network
-
-- Host: `20.240.216.254` (Azure public IP)
-- Firewall VM: `10.20.0.2` (lab gateway with WireGuard/Mullvad)
-- REMnux VM: `10.20.0.20` (behind firewall)
-
-## REMnux Recovery
-
-REMnux is a high-risk analysis VM. Use snapshots to roll back after malware testing.
-
+Then:
 ```bash
-# Create a clean snapshot after provisioning
-vagrant snapshot save remnux clean
-
-# Revert when needed
-vagrant snapshot restore remnux clean
+vagrant up win-analysis
 ```
 
-Snapshots are auto-created when `features.remnux_snapshot: true` in `config.yml`.
+See [docs/Windows-Analysis-VM.md](docs/Windows-Analysis-VM.md) for setup and usage.
 
-## OpenRelik Workers
+Ansible defaults to `ansible/inventory.yml` via `ansible/ansible.cfg`.
 
-OpenRelik runs the core workers from the official compose file plus any extras defined in `ansible/roles/openrelik/defaults/main.yml` (override `openrelik_extra_workers` if needed).
+## Roles Overview
+- `base`: Common packages, Docker install, network setup, health checks
+- `firewall`: nftables NAT + filter, dnsmasq, optional WireGuard integration, simple monitoring hooks
+- `remnux`: Tools (Wireshark, YARA Python, Volatility3 if available, etc.), xrdp + XFCE desktop
+- `edge`: Nginx reverse proxy, self-signed TLS, Basic Auth, path/subdomain routing
+- `openrelik`: Installs via official script, configures ports and extra workers, composes stack
+- `guacamole`: Docker-based Guacamole (guacd + guacamole + PostgreSQL) with generated schema
+- `maigret`: Runs Maigret web UI on localhost bound through edge
+- `kasm`: Kasm VNC workspaces for Tor-only and clearweb OSINT, proxied via Nginx with TLS
+- `network`: Creates dedicated Docker networks + iptables isolation for Kasm Tor
+
+See `docs/Roles.md` for details and key variables.
+
+## Authentication & Secrets
+- Edge Basic Auth: username and password come from `config.yml`; if password is empty, one is generated and stored at `/opt/guacamole/auth/.htpasswd_secret`
+- Guacamole DB: password stored at `/opt/guacamole/secrets/db_password` (generated if not provided)
+- Kasm: passwords for Tor and OSINT workspaces stored under `/opt/kasm/secrets/`
+
+## WireGuard (Optional Mullvad Egress)
+To route all lab traffic through Mullvad VPN:
+1. Obtain a Mullvad WireGuard config file
+2. Place it in `ansible/roles/firewall/files/private/<endpoint>.conf`
+3. Set `features.enable_wireguard: true` in `config.yml`
+4. Re-provision the firewall VM
+5. Verify with `curl https://am.i.mullvad.net/connected` from REMnux/Windows
+
+See [docs/WireGuard-Setup.md](docs/WireGuard-Setup.md) for details.
+
+## Notes & Tips
+- TLS: edge role generates a cert for the configured hostname and wildcard; swap in real certs by updating edge defaults or templates
+- Subdomains: Set `external_access.use_subdomains: true` to enable per-service subdomains; path routing remains available
+- Snapshots: REMnux snapshot handling is controlled via `features.remnux_snapshot*` in `config.yml`
+
+## Maintenance
+Check VM status:
+```bash
+vagrant status
+```
+Re-provision after config changes:
+```bash
+cd ansible
+ansible-playbook playbooks/host.yml
+```
+
+## License
+This repository’s playbooks and templates are provided as-is for lab use. Verify local laws and provider policies before routing traffic via VPNs.

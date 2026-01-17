@@ -6,14 +6,18 @@ utgard-firewall
 [remnux]
 utgard-remnux
 
+[windows_analysis]
+utgard-win ansible_host=10.20.0.30 ansible_user=analyst ansible_connection=winrm ansible_winrm_transport=basic
+
 [lab:children]
 firewall
 remnux
+windows_analysis
 
 [all:vars]
-ansible_user = vagrant
-ansible_ssh_private_key_file = ~/.vagrant.d/insecure_private_key
-host_public_ip = 20.240.216.254
+ansible_user=vagrant
+ansible_ssh_private_key_file=~/.vagrant.d/insecure_private_key
+host_public_ip=20.240.216.254
 
 [localhost]
 127.0.0.1 ansible_connection=local ansible_python_interpreter=/usr/bin/python3

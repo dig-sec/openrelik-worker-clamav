@@ -1,0 +1,49 @@
+---
+# Windows Analysis VM provisioning
+
+- name: Set hostname and static IP (if needed)
+  include_tasks: network.yml
+  tags: [windows-analysis, network]
+
+- name: Create analyst user account
+  include_tasks: users.yml
+  tags: [windows-analysis, users]
+
+- name: Configure PowerShell logging
+  include_tasks: powershell.yml
+  tags: [windows-analysis, logging]
+
+- name: Install Sysmon
+  include_tasks: sysmon.yml
+  tags: [windows-analysis, sysmon]
+  when: sysmon_enabled | default(true)
+
+- name: Install Sysinternals tools
+  include_tasks: sysinternals.yml
+  tags: [windows-analysis, tools]
+
+- name: Install analysis tools
+  include_tasks: tools.yml
+  tags: [windows-analysis, tools]
+
+- name: Configure Windows Defender
+  include_tasks: defender.yml
+  tags: [windows-analysis, defender]
+
+- name: Setup RDP for remote access
+  include_tasks: rdp.yml
+  tags: [windows-analysis, rdp]
+
+- name: Display provisioning summary
+  debug:
+    msg:
+      - "============================================"
+      - "Windows Analysis VM Provisioned"
+      - "============================================"
+      - "Hostname: {{ ansible_hostname }}"
+      - "IP: {{ lab_ip }}"
+      - "Analyst User: {{ analyst_username }}"
+      - "Sysmon: {% if sysmon_enabled %}Enabled{% else %}Disabled{% endif %}"
+      - "PowerShell Logging: {% if powershell_logging_enabled %}Enabled{% else %}Disabled{% endif %}"
+      - "Windows Defender: {% if defender_enabled %}Enabled ({{ 'Realtime' if defender_realtime_protection else 'Disabled' }}){% else %}Disabled{% endif %}"
+      - "============================================"

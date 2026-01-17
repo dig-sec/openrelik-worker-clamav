@@ -1,0 +1,41 @@
+---
+# Install Sysinternals tools suite
+
+- name: Create tools directory
+  win_file:
+    path: "C:\\tools\\sysinternals"
+    state: directory
+
+- name: Download Sysinternals suite
+  win_get_url:
+    url: "https://download.sysinternals.com/files/SysinternalsSuite.zip"
+    dest: "C:\\Windows\\Temp\\SysinternalsSuite.zip"
+
+- name: Extract Sysinternals
+  win_unzip:
+    src: "C:\\Windows\\Temp\\SysinternalsSuite.zip"
+    dest: "C:\\tools\\sysinternals"
+
+- name: Accept Sysinternals EULA
+  win_regedit:
+    path: "HKCU:\\Software\\Sysinternals"
+    name: "EulaAccepted"
+    data: 1
+    type: dword
+
+- name: Add Sysinternals to PATH
+  win_shell: |
+    [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\tools\sysinternals", "User")
+  changed_when: false
+
+- name: Create desktop shortcuts for common tools
+  win_shortcut:
+    src: "{{ item.path }}"
+    dest: "C:\\Users\\Public\\Desktop\\{{ item.name }}.lnk"
+    icon: "{{ item.path }},0"
+  loop:
+    - { name: "Procmon", path: "C:\\tools\\sysinternals\\Procmon64.exe" }
+    - { name: "Procexp", path: "C:\\tools\\sysinternals\\procexp64.exe" }
+    - { name: "Autoruns", path: "C:\\tools\\sysinternals\\Autoruns64.exe" }
+    - { name: "TCPView", path: "C:\\tools\\sysinternals\\tcpview64.exe" }
+  failed_when: false

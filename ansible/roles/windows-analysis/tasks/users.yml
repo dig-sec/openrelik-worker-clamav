@@ -1,0 +1,37 @@
+---
+# Create analyst user account
+
+- name: Generate strong password if not provided
+  set_fact:
+    analyst_password_resolved: "{{ analyst_password_resolved if analyst_password_resolved is defined else 'Utgard@Lab2026!' }}"
+
+- name: Create analyst user
+  win_user:
+    name: "{{ analyst_username }}"
+    password: "{{ analyst_password_resolved }}"
+    password_never_expires: no
+    user_cannot_change_password: no
+    account_disabled: no
+    state: present
+  register: analyst_user
+
+- name: Add analyst to Administrators group
+  win_group_membership:
+    name: Administrators
+    members:
+      - "{{ ansible_hostname }}\\{{ analyst_username }}"
+    state: present
+
+- name: Add analyst to Remote Desktop Users group
+  win_group_membership:
+    name: "Remote Desktop Users"
+    members:
+      - "{{ ansible_hostname }}\\{{ analyst_username }}"
+    state: present
+
+- name: Display analyst credentials
+  debug:
+    msg:
+      - "Analyst user created: {{ analyst_username }}"
+      - "Password: {{ analyst_password_resolved }}"
+      - "Add to Guacamole: hostname=10.20.0.30, username={{ analyst_username }}"

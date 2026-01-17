@@ -1,0 +1,29 @@
+---
+# Windows network configuration
+
+- name: Set hostname
+  win_hostname:
+    name: "utgard-win"
+  register: hostname_result
+
+- name: Reboot after hostname change
+  win_reboot:
+    msg: "Hostname changed, rebooting..."
+  when: hostname_result.reboot_required
+
+- name: Configure static DNS resolvers
+  win_dns_client:
+    adapter_names: "*"
+    ipv4_addresses:
+      - "{{ lab_gateway }}"
+  failed_when: false
+
+- name: Display network configuration
+  win_shell: |
+    Get-NetIPConfiguration | Select-Object InterfaceAlias, IPv4Address, IPv4DefaultGateway | Format-Table -AutoSize
+  register: net_config
+  changed_when: false
+
+- name: Show network status
+  debug:
+    msg: "{{ net_config.stdout_lines }}"

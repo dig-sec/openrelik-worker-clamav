@@ -2,7 +2,7 @@
 # Default variables for firewall role
 
 # Enable WireGuard/Mullvad VPN on the firewall gateway
-enable_wireguard: true
+enable_wireguard: false
 
 # Default Mullvad endpoint to use when none is specified externally
 wg_endpoint: "se-mma-wg-002"
@@ -18,3 +18,7 @@ dnsmasq_upstream_servers:
 # Firewall interfaces (override if needed)
 firewall_wireguard_interface: "wg0"
 firewall_external_interface: ""
+
+# Lab VM IPs (used for DNS entries)
+remnux_ip: "10.20.0.20"
+win_analysis_ip: "10.20.0.30"

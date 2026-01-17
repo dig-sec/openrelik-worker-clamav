@@ -1,0 +1,36 @@
+---
+# Install and configure Sysmon
+
+- name: Download Sysmon
+  win_get_url:
+    url: "https://download.sysinternals.com/files/Sysmon.zip"
+    dest: "C:\\Windows\\Temp\\Sysmon.zip"
+
+- name: Extract Sysmon
+  win_unzip:
+    src: "C:\\Windows\\Temp\\Sysmon.zip"
+    dest: "{{ sysmon_install_path }}"
+
+- name: Download Sysmon config from SwiftOnSecurity
+  win_get_url:
+    url: "{{ sysmon_config_url }}"
+    dest: "{{ sysmon_install_path }}\\sysmonconfig.xml"
+
+- name: Install Sysmon with config
+  win_shell: |
+    & "{{ sysmon_install_path }}\Sysmon64.exe" -accepteula -i "{{ sysmon_install_path }}\sysmonconfig.xml"
+  changed_when: false
+  failed_when: false
+
+- name: Verify Sysmon service is running
+  win_service:
+    name: "Sysmon64"
+    start_mode: auto
+    state: started
+
+- name: Configure Sysmon event log forwarding to REMnux (optional)
+  win_shell: |
+    # Forward Sysmon events to local Event Log (can be pulled via WinRM or exported)
+    wecutil qc /quiet
+  changed_when: false
+  failed_when: false
