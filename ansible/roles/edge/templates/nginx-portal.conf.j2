@@ -384,6 +384,11 @@ server {
     root {{ portal_web_root }};
     index index.html;
 
+{% if edge_auth_enabled | default(false) and edge_auth_protect_landing | default(false) %}
+    auth_basic "Utgard OSINT Platform";
+    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
+{% endif %}
+
     location = / {
         try_files /index.html =404;
     }

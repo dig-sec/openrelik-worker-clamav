@@ -4,5 +4,5 @@
   become: yes
   
   roles:
-    - common      # Base OS setup
+    - base        # Base OS setup
     - firewall    # Firewall-specific configuration

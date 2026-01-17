@@ -9,10 +9,11 @@
       - wireguard-tools
       - resolvconf
     state: present
+  when: enable_wireguard | default(false)
 
 - name: Set WireGuard defaults
   set_fact:
-    wg_enabled: "{{ enable_wireguard | default(true) }}"
+    wg_enabled: "{{ enable_wireguard | default(false) }}"
 
 - name: Configure WireGuard with Mullvad exit
   block:
@@ -45,7 +46,8 @@
           Provide wg0_conf or place a real config in ansible/roles/firewall/files/private/.
       when:
         - (wg0_conf | default('') | length) == 0
-        - not wg_endpoint_config_stat.stat.exists
+        - wg_endpoint_config_stat is defined
+        - not (wg_endpoint_config_stat.stat.exists | default(false))
 
     # Method 2: Select Mullvad endpoint from role files directory
     - name: Deploy WireGuard config from endpoint selection
@@ -55,6 +57,7 @@
         mode: '0600'
       when:
         - (wg0_conf | default('') | length) == 0
+        - wg_endpoint_config_stat is defined
         - wg_endpoint_config_stat.stat.exists
 
     - name: Ensure IPv6 is enabled for WireGuard

@@ -42,7 +42,7 @@ services:
       - {{ kasm_tls_cert_path }}:/etc/nginx/tls/fullchain.pem:ro
       - {{ kasm_tls_key_path }}:/etc/nginx/tls/privkey.pem:ro
     ports:
-      - "{{ kasm_proxy_port }}:443"
+      - "127.0.0.1:{{ kasm_proxy_port }}:443"
     networks:
 {% if kasm_tor_enabled %}
       - {{ kasm_isolated_network }}

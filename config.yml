@@ -52,13 +52,13 @@ auth:
   password: ""
   
   # Protect landing page (false = landing page is public, services require auth)
-  protect_landing: false
+  protect_landing: true
 
 #------------------------------------------------------------------------------
 # Feature Flags
 #------------------------------------------------------------------------------
 features:
-  enable_wireguard: true
+  enable_wireguard: false
   remnux_snapshot: true
   remnux_snapshot_name: "clean"
 

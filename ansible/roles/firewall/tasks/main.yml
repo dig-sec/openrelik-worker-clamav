@@ -23,7 +23,7 @@
 - name: Configure WireGuard VPN
   include_tasks: wireguard.yml
   tags: [firewall, wireguard]
-  when: enable_wireguard | default(true)
+  when: false
 
 - name: Setup monitoring
   include_tasks: monitoring.yml
