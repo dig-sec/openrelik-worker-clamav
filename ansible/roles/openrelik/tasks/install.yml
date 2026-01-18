@@ -63,7 +63,7 @@
   lineinfile:
     path: "{{ openrelik_install_dir }}/openrelik/config.env"
     regexp: '^OPENRELIK_SERVER_URL='
-    line: "OPENRELIK_SERVER_URL={{ openrelik_server_url | default('https://' ~ (openrelik_external_hostname | default('localhost')) ~ '/openrelik/api') }}"
+    line: "OPENRELIK_SERVER_URL={{ openrelik_server_url | default('https://' ~ (openrelik_external_hostname | default('localhost')) ~ '/openrelik') }}"
   when:
     - openrelik_compose.stat.exists
   register: openrelik_set_url

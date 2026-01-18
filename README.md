@@ -66,11 +66,10 @@ ansible-playbook playbooks/host.yml
 
 3) Access the portal and services:
 - Portal: `https://<hostname>/` (or just the root domain if subdomains are enabled)
-- Guacamole: `https://guacamole.<hostname>/` or `https://<hostname>/guacamole/`
-- OpenRelik: `https://openrelik.<hostname>/` or `https://<hostname>/openrelik/`
-- Maigret: `https://maigret.<hostname>/` or `https://<hostname>/maigret/`
-- Kasm (OSINT): `https://browsers.<hostname>/` or `https://<hostname>/kasm/`
-- Kasm (Tor): `https://tor.<hostname>/` or `https://<hostname>/kasm/tor/`
+- Guacamole: `https://guacamole.<hostname>/`
+- OpenRelik: `https://openrelik.<hostname>/`
+- Maigret: `https://maigret.<hostname>/`
+- Kasm (OSINT): `https://browsers.<hostname>/`
 
 On first run, the edge role prints access URLs and any generated Basic Auth credentials.
 

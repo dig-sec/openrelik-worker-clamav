@@ -39,142 +39,6 @@ server {
     location = / {
         try_files /index.html =404;
     }
-
-    # Fallback path-based routing (active even in subdomain mode)
-{% if portal_services.guacamole | default(true) %}
-        location = /guacamole {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.guacamole | default(false)) %}
-        auth_basic "Utgard OSINT Platform - Guacamole";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-        return 301 /guacamole/;
-    }
-
-        location /guacamole/ {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.guacamole | default(false)) %}
-        auth_basic "Utgard OSINT Platform - Guacamole";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.guacamole.port }}/guacamole/;
-        proxy_buffering off;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Port 443;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_read_timeout 3600;
-    }
-{% endif %}
-
-{% if portal_services.openrelik | default(true) %}
-        location /openrelik/ {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-        auth_basic "Utgard OSINT Platform - OpenRelik";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 3600;
-    }
-
-        location /openrelik/assets/ {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-        auth_basic "Utgard OSINT Platform - OpenRelik";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-        rewrite ^/openrelik/assets/(.*)$ /assets/$1 break;
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }};
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_buffering off;
-    }
-
-    # Support OpenRelik absolute asset paths when using path-based routing
-        location /assets/ {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-        auth_basic "Utgard OSINT Platform - OpenRelik";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-    proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }};
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_buffering off;
-    }
-
-    # OpenRelik favicon reference is absolute
-        location = /favicon.png {
-    {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-        auth_basic "Utgard OSINT Platform - OpenRelik";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-    {% endif %}
-    proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }};
-    proxy_http_version 1.1;
-    proxy_set_header Host $host;
-    proxy_buffering off;
-    }
-
-    location /openrelik/api/ {
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-        auth_basic "Utgard OSINT Platform - OpenRelik";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.api_port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 3600;
-        client_max_body_size 10G;
-    }
-{% endif %}
-
-{% if portal_services.maigret | default(true) %}
-    location /maigret/ {
-{% if edge_auth_enabled | default(false) %}
-        auth_basic "Utgard OSINT Platform - Maigret";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.maigret.port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 300;
-    }
-{% endif %}
-
-{% if portal_services.kasm | default(true) %}
-    location = /kasm {
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.kasm | default(false)) %}
-        auth_basic "Utgard OSINT Platform - Kasm";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-        return 301 /kasm/;
-    }
-    
-    location /kasm/ {
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.kasm | default(false)) %}
-        auth_basic "Utgard OSINT Platform - Kasm";
-        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-        return 302 https://$host:{{ portal_service_endpoints.kasm.port }}/;
-    }
-{% endif %}
 }
 
 # Guacamole subdomain
@@ -189,11 +53,9 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-{% if edge_auth_enabled | default(false) %}
 {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.guacamole | default(false)) %}
     auth_basic "Utgard OSINT Platform - Guacamole";
     auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
 {% endif %}
 
     location / {
@@ -225,13 +87,12 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-{% if edge_auth_enabled | default(false) %}
 {% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
     auth_basic "Utgard OSINT Platform - OpenRelik";
     auth_basic_user_file /opt/guacamole/auth/.htpasswd;
 {% endif %}
-{% endif %}
 
+    # UI
     location / {
         proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }}/;
         proxy_http_version 1.1;
@@ -245,16 +106,9 @@ server {
         proxy_read_timeout 3600;
     }
 
-    location /assets/ {
-        rewrite ^/assets/(.*)$ /assets/$1 break;
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }};
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_buffering off;
-    }
-
+    # API
     location /api/ {
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.api_port }}/;
+        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.api_port }}/api/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
