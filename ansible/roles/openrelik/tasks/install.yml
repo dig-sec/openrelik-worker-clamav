@@ -253,3 +253,21 @@
     msg: "{{ openrelik_ps.stdout_lines }}"
   when:
     - openrelik_compose.stat.exists
+
+- name: Ensure artifact directories exist for database folders
+  shell: |
+    docker compose exec -T openrelik-postgres psql -U openrelik -d openrelik -t -c "SELECT uuid FROM folder WHERE deleted_at IS NULL;" | \
+    while read -r uuid; do
+      uuid_clean=$(echo "$uuid" | tr -d '- ')
+      if [ -n "$uuid_clean" ]; then
+        mkdir -p "{{ openrelik_install_dir }}/openrelik/data/artifacts/${uuid_clean}"
+        chmod 777 "{{ openrelik_install_dir }}/openrelik/data/artifacts/${uuid_clean}"
+      fi
+    done
+  args:
+    chdir: "{{ openrelik_install_dir }}/openrelik"
+  register: openrelik_artifact_dirs
+  changed_when: false
+  failed_when: false
+  when:
+    - openrelik_compose.stat.exists

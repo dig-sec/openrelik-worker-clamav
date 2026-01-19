@@ -82,5 +82,5 @@ resources:
     memory: 4096
     cpus: 2
   windows_analysis:
-    memory: 8192
-    cpus: 4
+    memory: 4096
+    cpus: 2

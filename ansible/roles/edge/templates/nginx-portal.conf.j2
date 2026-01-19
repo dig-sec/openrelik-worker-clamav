@@ -30,13 +30,18 @@ server {
     root {{ portal_web_root }};
     index index.html;
 
-{% if edge_auth_enabled | default(false) and edge_auth_protect_landing | default(false) %}
-    # Authentication required for landing page
-    auth_basic "Utgard OSINT Platform";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-
     location = / {
+{% if edge_auth_enabled | default(false) and edge_auth_protect_landing | default(false) %}
+        # Authentication required for landing page (with IP whitelist bypass)
+        satisfy any;
+        allow 62.109.37.98;
+        allow 78.71.168.138;
+        allow 193.182.188.33;
+        deny all;
+        
+        auth_basic "Utgard OSINT Platform";
+        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
+{% endif %}
         try_files /index.html =404;
     }
 }
@@ -52,11 +57,6 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
-
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.guacamole | default(false)) %}
-    auth_basic "Utgard OSINT Platform - Guacamole";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
 
     location / {
         proxy_pass http://127.0.0.1:{{ portal_service_endpoints.guacamole.port }}/guacamole/;
@@ -87,10 +87,17 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.openrelik | default(false)) %}
-    auth_basic "Utgard OSINT Platform - OpenRelik";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
+    # Auth endpoints go to the API service (UI is static and returns 405 for POST)
+    location /auth/ {
+        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.api_port }}/auth/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 3600;
+    }
 
     # UI
     location / {
@@ -133,20 +140,17 @@ server {
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
 
-{% if edge_auth_enabled | default(false) %}
-    auth_basic "Utgard OSINT Platform - Maigret";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
-
     location / {
+        satisfy any;
+        allow 62.109.37.98;
+        allow 78.71.168.138;
+        allow 193.182.188.33;
+        deny all;
+        
+        auth_basic "Utgard OSINT Platform - Maigret";
+        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
+        
         proxy_pass http://127.0.0.1:{{ portal_service_endpoints.maigret.port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 300;
     }
 }
 {% endif %}
@@ -162,11 +166,6 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
-
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.kasm | default(false)) %}
-    auth_basic "Utgard OSINT Platform - Kasm";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
 
     location / {
         proxy_pass https://127.0.0.1:{{ portal_service_endpoints.kasm.port }}/tor/;
@@ -195,11 +194,6 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
     ssl_prefer_server_ciphers on;
-
-{% if edge_auth_enabled | default(false) and not (edge_auth_exempt_services.kasm | default(false)) %}
-    auth_basic "Utgard OSINT Platform - Kasm";
-    auth_basic_user_file /opt/guacamole/auth/.htpasswd;
-{% endif %}
 
     location / {
         proxy_pass https://127.0.0.1:{{ portal_service_endpoints.kasm.port }}/;
@@ -269,47 +263,15 @@ server {
     }
 {% endif %}
 
-    # OpenRelik forensic analysis platform
-{% if portal_services.openrelik | default(true) %}
-    location /openrelik/ {
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }}/;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 3600;
-    }
-
-    # OpenRelik assets rewrite
-    location /openrelik/assets/ {
-        rewrite ^/openrelik/assets/(.*)$ /assets/$1 break;
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.ui_port }};
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_buffering off;
-    }
-
-    # OpenRelik API
-    location /openrelik/api/ {
-        proxy_pass http://127.0.0.1:{{ portal_service_endpoints.openrelik.api_port }}/api/;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-        proxy_read_timeout 3600;
-        client_max_body_size 10G;
-    }
-{% endif %}
-
     # Maigret username OSINT search
 {% if portal_services.maigret | default(true) %}
     location /maigret/ {
+        satisfy any;
+        allow all;
+        
+        auth_basic "Utgard OSINT Platform - Maigret";
+        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
+        
         proxy_pass http://127.0.0.1:{{ portal_service_endpoints.maigret.port }}/;
         proxy_http_version 1.1;
         proxy_set_header Host $host;
