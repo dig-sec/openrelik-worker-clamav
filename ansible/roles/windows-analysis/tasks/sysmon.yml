@@ -1,32 +1,54 @@
 ---
 # Install and configure Sysmon
 
+# Reset download facts when offline so downstream tasks stay skipped
+- name: Reset Sysmon download facts when offline
+  set_fact:
+    sysmon_download: { failed: true }
+    sysmon_config_download: { failed: true }
+  when: windows_offline_mode | default(false)
+
+# Skip Sysmon download entirely when offline
 - name: Download Sysmon
   win_get_url:
     url: "https://download.sysinternals.com/files/Sysmon.zip"
     dest: "C:\\Windows\\Temp\\Sysmon.zip"
+  register: sysmon_download
+  ignore_errors: yes
+  when: not windows_offline_mode | default(false)
 
+# Only run if we actually downloaded
 - name: Extract Sysmon
   win_unzip:
     src: "C:\\Windows\\Temp\\Sysmon.zip"
     dest: "{{ sysmon_install_path }}"
+  when: sysmon_download is defined and sysmon_download is succeeded and not windows_offline_mode | default(false)
 
+# Fetch config only when download succeeded
 - name: Download Sysmon config from SwiftOnSecurity
   win_get_url:
     url: "{{ sysmon_config_url }}"
     dest: "{{ sysmon_install_path }}\\sysmonconfig.xml"
+  register: sysmon_config_download
+  ignore_errors: yes
+  when: sysmon_download is defined and sysmon_download is succeeded and not windows_offline_mode | default(false)
 
+# Install only if both downloads succeeded
 - name: Install Sysmon with config
   win_shell: |
     & "{{ sysmon_install_path }}\Sysmon64.exe" -accepteula -i "{{ sysmon_install_path }}\sysmonconfig.xml"
   changed_when: false
   failed_when: false
+  when: sysmon_download is defined and sysmon_download is succeeded and sysmon_config_download is defined and sysmon_config_download is succeeded and not windows_offline_mode | default(false)
 
+# Skip service start when not installed
 - name: Verify Sysmon service is running
   win_service:
     name: "Sysmon64"
     start_mode: auto
     state: started
+  when: sysmon_download is defined and sysmon_download is succeeded and not windows_offline_mode | default(false)
+  ignore_errors: yes
 
 - name: Configure Sysmon event log forwarding to REMnux (optional)
   win_shell: |

@@ -19,14 +19,14 @@
   win_group_membership:
     name: Administrators
     members:
-      - "{{ ansible_hostname }}\\{{ analyst_username }}"
+      - "{{ analyst_username }}"
     state: present
 
 - name: Add analyst to Remote Desktop Users group
   win_group_membership:
     name: "Remote Desktop Users"
     members:
-      - "{{ ansible_hostname }}\\{{ analyst_username }}"
+      - "{{ analyst_username }}"
     state: present
 
 - name: Display analyst credentials

@@ -1,7 +1,7 @@
 ---
 # Windows Analysis VM provisioning playbook
 - name: Provision Windows Analysis VM
-  hosts: all
+  hosts: windows_analysis
   gather_facts: yes
   vars:
     analyst_password_resolved: "Utgard@Lab2026!"  # Override via --extra-vars if needed

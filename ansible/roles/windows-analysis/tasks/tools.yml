@@ -7,6 +7,7 @@
     state: directory
 
 # Wireshark portable
+# Skip Wireshark download when offline
 - name: Download Wireshark portable
   win_get_url:
     url: "https://1.na.dl.wireshark.org/win64/Wireshark-4.0.11-x64-portable.exe"
@@ -14,6 +15,7 @@
     force: no
   register: wireshark_dl
   failed_when: false
+  when: not windows_offline_mode | default(false)
 
 - name: FLOSS (Firefly Language Obfuscation Solver)
   block:
@@ -29,6 +31,7 @@
         dest: "C:\\tools\\analysis"
   rescue:
     - debug: msg="FLOSS download/extract failed - continuing"
+  when: not windows_offline_mode | default(false)
 
 # PE-sieve
 - name: Download PE-sieve
@@ -40,6 +43,7 @@
         force: no
   rescue:
     - debug: msg="PE-sieve download failed - continuing"
+  when: not windows_offline_mode | default(false)
 
 # Strings (from Sysinternals)
 - name: Ensure Strings is available
@@ -72,7 +76,7 @@
     - name: Verify Python install
       win_shell: python --version
       changed_when: false
-  when: python_check.rc != 0
+  when: python_check.rc != 0 and not windows_offline_mode | default(false)
   rescue:
     - debug: msg="Python installation failed - may already be installed"
 
@@ -91,6 +95,7 @@
         dest: "C:\\tools\\analysis\\x64dbg"
   rescue:
     - debug: msg="x64dbg download failed - continuing"
+  when: not windows_offline_mode | default(false)
 
 # Summary
 - name: List installed analysis tools

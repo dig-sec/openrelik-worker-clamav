@@ -1,6 +1,6 @@
 ---
 - name: Deploy REMnux VM
-  hosts: all
+  hosts: remnux
   become: yes
   
   roles:

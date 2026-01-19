@@ -271,3 +271,23 @@
   failed_when: false
   when:
     - openrelik_compose.stat.exists
+
+- name: Create yara rules directory for OpenRelik worker
+  file:
+    path: "{{ openrelik_install_dir }}/openrelik/data/yara"
+    state: directory
+    mode: '0755'
+  when:
+    - openrelik_compose.stat.exists
+
+- name: Clone signature-base yara rules for OpenRelik worker-yara
+  git:
+    repo: https://github.com/Neo23x0/signature-base.git
+    dest: "{{ openrelik_install_dir }}/openrelik/data/yara/signature-base"
+    version: master
+    depth: 1
+  register: yara_rules_clone
+  failed_when: false
+  when:
+    - openrelik_compose.stat.exists
+    - not (openrelik_offline_mode | default(false) | bool)

@@ -45,3 +45,4 @@ openrelik_registry_url: ghcr.io
 openrelik_registry_username: ""
 openrelik_registry_password: ""
 openrelik_skip_missing_workers: false
+openrelik_offline_mode: true

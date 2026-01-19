@@ -1,2 +1,4 @@
 ---
 # REMnux role defaults
+# Set true to skip git clones and pip installs (offline mode)
+remnux_offline_mode: true

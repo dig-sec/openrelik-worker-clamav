@@ -10,6 +10,9 @@ sysmon_enabled: true
 sysmon_config_url: "https://raw.githubusercontent.com/SwiftOnSecurity/sysmon-config/master/sysmonconfig-export.xml"
 sysmon_install_path: "C:\\sysmon"
 
+# Set true to skip internet downloads (Sysmon, Sysinternals, extra tools)
+windows_offline_mode: true
+
 # PowerShell logging
 powershell_logging_enabled: true
 powershell_module_logging_enabled: true

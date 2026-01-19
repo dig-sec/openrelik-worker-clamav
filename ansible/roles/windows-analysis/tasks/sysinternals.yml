@@ -6,27 +6,37 @@
     path: "C:\\tools\\sysinternals"
     state: directory
 
+# Skip download when offline
 - name: Download Sysinternals suite
   win_get_url:
     url: "https://download.sysinternals.com/files/SysinternalsSuite.zip"
     dest: "C:\\Windows\\Temp\\SysinternalsSuite.zip"
+  register: sysinternals_download
+  ignore_errors: yes
+  when: not windows_offline_mode | default(false)
 
+# Only extract when downloaded
 - name: Extract Sysinternals
   win_unzip:
     src: "C:\\Windows\\Temp\\SysinternalsSuite.zip"
     dest: "C:\\tools\\sysinternals"
+  when: sysinternals_download is defined and sysinternals_download is succeeded and not windows_offline_mode | default(false)
 
+# Only set EULA if installed
 - name: Accept Sysinternals EULA
   win_regedit:
     path: "HKCU:\\Software\\Sysinternals"
     name: "EulaAccepted"
     data: 1
     type: dword
+  when: sysinternals_download is defined and sysinternals_download is succeeded and not windows_offline_mode | default(false)
 
+# PATH update only if installed
 - name: Add Sysinternals to PATH
   win_shell: |
     [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\tools\sysinternals", "User")
   changed_when: false
+  when: sysinternals_download is defined and sysinternals_download is succeeded and not windows_offline_mode | default(false)
 
 - name: Create desktop shortcuts for common tools
   win_shortcut:

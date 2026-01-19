@@ -28,6 +28,7 @@
   loop:
     - radare2
     - volatility3
+  when: not remnux_offline_mode | default(false)
 
 - name: Install Python analysis tools
   pip:
@@ -38,6 +39,7 @@
       - keystone-engine
       - yara-python
     state: present
+  when: not remnux_offline_mode | default(false)
 
 - name: Clone REMnux repository
   git:
@@ -45,3 +47,4 @@
     dest: /opt/remnux
     update: yes
   failed_when: false
+  when: not remnux_offline_mode | default(false)
