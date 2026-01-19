@@ -21,6 +21,27 @@
     state: present
   when: ansible_hostname == 'utgard-firewall'
 
+- name: Set default route via firewall gateway (lab VMs)
+  command: ip route replace default via {{ lab_gateway }}
+  when:
+    - ansible_hostname != 'utgard-firewall'
+    - lab_gateway is defined
+    - lab_gateway | length > 0
+  changed_when: true
+
+- name: Make default route persistent (lab VMs)
+  copy:
+    content: |
+      #!/bin/bash
+      # Set default route via firewall gateway
+      ip route replace default via {{ lab_gateway }}
+    dest: /etc/networkd-dispatcher/routable.d/50-default-route
+    mode: '0755'
+  when:
+    - ansible_hostname != 'utgard-firewall'
+    - lab_gateway is defined
+    - lab_gateway | length > 0
+
 - name: Verify network connectivity
   command: ping -c 1 8.8.8.8
   changed_when: false

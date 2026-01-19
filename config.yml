@@ -59,7 +59,7 @@ auth:
 # Feature Flags
 #------------------------------------------------------------------------------
 features:
-  enable_wireguard: false
+  enable_wireguard: true
   remnux_snapshot: true
   remnux_snapshot_name: "clean"
   windows_analysis_vm: true
