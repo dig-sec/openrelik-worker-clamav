@@ -36,6 +36,7 @@
       color: inherit;
       transition: border-color 0.2s, transform 0.2s;
       display: block;
+      position: relative;
     }
     .card:hover { border-color: #58a6ff; transform: translateY(-2px); }
     .card-icon {
@@ -53,6 +54,57 @@
     .badge.internal { background: #388bfd26; color: #58a6ff; }
     .badge.external { background: #3fb95026; color: #3fb950; }
     .footer { border-top: 1px solid #21262d; padding: 24px 32px; text-align: center; color: #484f58; font-size: 12px; margin-top: 48px; }
+    
+    /* Control buttons */
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid #30363d;
+      border-radius: 4px;
+      background: #21262d;
+      color: #c9d1d9;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .btn:hover { background: #30363d; border-color: #58a6ff; }
+    .btn:active { transform: scale(0.95); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.btn-danger:hover { border-color: #f85149; color: #f85149; }
+    .btn svg { width: 14px; height: 14px; }
+    
+    /* Notifications */
+    .notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 12px 20px;
+      border-radius: 6px;
+      background: #161b22;
+      border: 1px solid #30363d;
+      color: #f0f6fc;
+      font-size: 14px;
+      z-index: 1000;
+      animation: slideIn 0.3s ease-out;
+      max-width: 400px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    }
+    .notification.success { border-color: #3fb950; }
+    .notification.error { border-color: #f85149; }
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
   </style>
 </head>
 <body>
@@ -105,6 +157,16 @@
         <h3>Kasm Tor Browser</h3>
         <p>Isolated Tor browser workspace. Network-restricted, Tor-only access for anonymous browsing.</p>
         <span class="badge internal">Isolated Network</span>
+        <div class="controls">
+          <button class="btn" onclick="restartContainer('kasm-tor-browser', event)">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+            Restart
+          </button>
+          <button class="btn btn-danger" onclick="resetContainer('kasm-tor-browser', event)">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/></svg>
+            Reset
+          </button>
+        </div>
       </a>
       
       <a href="https://browsers.20.240.216.254.sslip.io/" class="card" style="text-decoration: none;">
@@ -116,9 +178,112 @@
         <h3>Kasm OSINT Browser</h3>
         <p>Isolated browser with forensic OSINT tools. Full clearweb access for research and investigations.</p>
         <span class="badge internal">Isolated Network</span>
+        <div class="controls">
+          <button class="btn" onclick="restartContainer('kasm-forensic-osint', event)">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+            Restart
+          </button>
+          <button class="btn btn-danger" onclick="resetContainer('kasm-forensic-osint', event)">
+            <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/></svg>
+            Reset
+          </button>
+        </div>
       </a>
     </div>
   </main>
  
+  <script>
+    const API_BASE = '/api/kasm';
+
+    function showNotification(message, type = 'success') {
+      const notification = document.createElement('div');
+      notification.className = `notification ${type}`;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 300);
+      }, 4000);
+    }
+
+    async function restartContainer(containerName, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'Restarting...';
+      
+      try {
+        const response = await fetch(`${API_BASE}/containers/${containerName}/restart`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        });
+        
+        if (response.status === 401 || response.status === 403) {
+          showNotification('Authentication required. Please refresh and log in again.', 'error');
+          button.disabled = false;
+          button.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg> Restart';
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showNotification(`${containerName} restarted successfully`, 'success');
+        } else {
+          showNotification(`Failed to restart: ${data.error || 'Unknown error'}`, 'error');
+        }
+      } catch (error) {
+        showNotification(`Network error: ${error.message}`, 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg> Restart';
+      }
+    }
+
+    async function resetContainer(containerName, event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      if (!confirm(`Reset ${containerName} to clean state? This will clear all data and sessions.`)) {
+        return;
+      }
+      
+      const button = event.currentTarget;
+      button.disabled = true;
+      button.textContent = 'Resetting...';
+      
+      try {
+        const response = await fetch(`${API_BASE}/containers/${containerName}/reset`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin'
+        });
+        
+        if (response.status === 401 || response.status === 403) {
+          showNotification('Authentication required. Please refresh and log in again.', 'error');
+          button.disabled = false;
+          button.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/></svg> Reset';
+          return;
+        }
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showNotification(`${containerName} reset to clean state`, 'success');
+        } else {
+          showNotification(`Failed to reset: ${data.error || 'Unknown error'}`, 'error');
+        }
+      } catch (error) {
+        showNotification(`Network error: ${error.message}`, 'error');
+      } finally {
+        button.disabled = false;
+        button.innerHTML = '<svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1H2.5zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5zM8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5zm3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0z"/></svg> Reset';
+      }
+    }
+  </script>
 </body>
 </html>

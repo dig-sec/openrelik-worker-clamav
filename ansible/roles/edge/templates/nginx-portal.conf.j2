@@ -44,6 +44,28 @@ server {
 {% endif %}
         try_files /index.html =404;
     }
+
+    # KASM Management API
+    location /api/kasm/ {
+{% if edge_auth_enabled | default(false) %}
+        satisfy any;
+        allow 62.109.37.98;
+        allow 78.71.168.138;
+        allow 193.182.188.33;
+        deny all;
+        
+        auth_basic "Utgard OSINT Platform API";
+        auth_basic_user_file /opt/guacamole/auth/.htpasswd;
+{% endif %}
+        proxy_pass http://127.0.0.1:5001/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_buffering off;
+        proxy_read_timeout 30;
+    }
 }
 
 # Guacamole subdomain
