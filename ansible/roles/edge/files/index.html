@@ -55,6 +55,24 @@
     .badge.external { background: #3fb95026; color: #3fb950; }
     .footer { border-top: 1px solid #21262d; padding: 24px 32px; text-align: center; color: #484f58; font-size: 12px; margin-top: 48px; }
     
+    /* Banner */
+    .banner {
+      margin-bottom: 48px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #30363d;
+      background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .banner img {
+      width: 100%;
+      height: auto;
+      display: block;
+      max-height: 300px;
+      object-fit: cover;
+      object-position: top center;
+    }
+    
     /* Control buttons */
     .controls {
       margin-top: 16px;
@@ -113,6 +131,9 @@
   </header>
   
   <main class="container">
+    <div class="banner">
+      <img src="/images/banner.png" alt="Utgard OSINT Platform Banner">
+    </div>
    
     <div class="grid">
       <a href="https://guacamole.20.240.216.254.sslip.io/" class="card">

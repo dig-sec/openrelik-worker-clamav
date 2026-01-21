@@ -162,6 +162,18 @@
     dest: "{{ portal_web_root }}/index.html"
     mode: '0644'
 
+- name: Create images directory
+  file:
+    path: "{{ portal_web_root }}/images"
+    state: directory
+    mode: '0755'
+
+- name: Deploy banner image
+  copy:
+    src: images/banner.png
+    dest: "{{ portal_web_root }}/images/banner.png"
+    mode: '0644'
+
 - name: Render portal nginx configuration
   template:
     src: nginx-portal.conf.j2
