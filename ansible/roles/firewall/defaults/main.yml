@@ -21,4 +21,3 @@ firewall_external_interface: ""
 
 # Lab VM IPs (used for DNS entries)
 remnux_ip: "10.20.0.20"
-win_analysis_ip: "10.20.0.30"

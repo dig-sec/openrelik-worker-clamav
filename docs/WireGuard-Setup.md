@@ -2,7 +2,7 @@
 
 ## Overview
 The firewall VM can route all lab traffic through Mullvad VPN using WireGuard. This provides:
-- Anonymized internet egress for both REMnux and Windows VMs
+- Anonymized internet egress for REMnux VM
 - Centralized VPN management at the firewall
 - Fail-closed nftables rules if WireGuard interface is down
 
@@ -66,14 +66,11 @@ sudo ip addr show wg0   # Show wg0 IP
 curl https://am.i.mullvad.net/connected  # Verify Mullvad exit
 ```
 
-### Check from REMnux/Windows VMs
+### Check from REMnux
 ```bash
 # REMnux
 curl https://am.i.mullvad.net/json
 # Should show: "mullvad_exit_ip_hostname": "exit-xx.mullvad.net"
-
-# Windows (PowerShell)
-Invoke-WebRequest https://am.i.mullvad.net/json | ConvertFrom-Json
 ```
 
 ## Troubleshooting

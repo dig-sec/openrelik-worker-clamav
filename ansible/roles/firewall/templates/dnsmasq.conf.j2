@@ -24,6 +24,3 @@ address=/utgard-firewall.{{ dnsmasq_domain }}/{{ lab_gateway }}
 {% if remnux_ip is defined and remnux_ip | length > 0 %}
 address=/utgard-remnux.{{ dnsmasq_domain }}/{{ remnux_ip }}
 {% endif %}
-{% if win_analysis_ip is defined and win_analysis_ip | length > 0 %}
-address=/utgard-win.{{ dnsmasq_domain }}/{{ win_analysis_ip }}
-{% endif %}

@@ -68,51 +68,6 @@ vagrant ssh firewall
 systemctl status dnsmasq
 dig @localhost utgard-win.utgard.local
 ```
-If `dnsmasq` lacks Windows entries, re-provision firewall:
-```bash
-vagrant reload firewall --provision
-```
-
-## Windows VM (win-analysis)
-### WinRM timeout / unreachable
-```bash
-vagrant provision win-analysis --provision-with=ansible
-vagrant rdp-config win-analysis
-
-# Inside Windows (via VNC/RDP)
-Get-Service WinRM | Select-Object Status
-Get-NetTCPConnection -LocalPort 5985
-```
-Increase timeout if needed in Vagrantfile: `win.winrm.timeout = 600`.
-
-### Static IP not applied
-Ensure Windows network block in Vagrantfile omits `auto_config: false`. Then:
-```bash
-vagrant destroy win-analysis
-vagrant up win-analysis
-```
-
-### Analyst user / RDP fails
-```bash
-# Check user exists
-vagrant ssh win-analysis -- "powershell -c 'Get-LocalUser analyst'"
-
-# Check RDP service and firewall
-vagrant ssh win-analysis -- "powershell -c 'Get-Service TermService'"
-vagrant ssh win-analysis -- "powershell -c 'Get-NetFirewallRule -Name "Remote Desktop"'"
-```
-Re-provision with explicit password if needed:
-```bash
-vagrant provision win-analysis --extra-vars "analyst_password_resolved='NewPassword123!'"
-```
-
-### Tools download failures
-Each tool task uses block/rescue. Check log for failed downloads:
-```bash
-vagrant provision win-analysis 2>&1 | tee provision.log
-grep -i "failed\|rescue" provision.log
-```
-Manually install missing tools inside Windows, then resnapshot.
 
 ## WireGuard / Mullvad (firewall)
 ### WireGuard not active

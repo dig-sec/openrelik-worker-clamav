@@ -4,7 +4,6 @@ Utgard is a turnkey OSINT and DFIR lab that provisions a small virtual network a
 
 - Firewall/Gateway VM with nftables + dnsmasq + optional Mullvad WireGuard egress
 - REMnux VM for malware analysis (with RDP)
-- Optional Windows 10 analysis VM (Sysmon + Sysinternals + tools)
 - Host services: OpenRelik (forensic pipeline), Kasm Workspaces (isolated browsers incl. Tor), Guacamole (remote desktop gateway), Maigret (username OSINT)
 
 The edge role generates a TLS cert and exposes all services via a single hostname, with optional subdomain routing and HTTP Basic Auth.
@@ -76,31 +75,7 @@ On first run, the edge role prints access URLs and any generated Basic Auth cred
 ## Playbooks
 - `playbooks/firewall.yml`: Applies `base` + `firewall` to the firewall VM
 - `playbooks/remnux.yml`: Applies `base` + `remnux` to the REMnux VM
-- `playbooks/windows.yml`: Applies `windows-analysis` to the Windows VM (if enabled)
 - `playbooks/host.yml`: Applies `base`, `network`, `edge`, `openrelik`, `guacamole`, `maigret`, `kasm` on the host
-
-## Windows Analysis VM (Optional)
-An optional Windows 10 analysis VM can be added to the lab for malware detonation and reverse engineering:
-- Sysmon + SwiftOnSecurity config for comprehensive logging
-- Sysinternals Suite (Procmon, Procexp, Autoruns, TCPView, etc.)
-- Analysis tools: FLOSS, PE-sieve, x64dbg, Python, Wireshark
-- PowerShell logging and Windows Defender configured
-- Accessed via RDP through Guacamole
-
-Enable in `config.yml`:
-```yaml
-features:
-  windows_analysis_vm: true
-```
-
-Then:
-```bash
-vagrant up win-analysis
-```
-
-See [docs/Windows-Analysis-VM.md](docs/Windows-Analysis-VM.md) for setup and usage.
-
-Ansible defaults to `ansible/inventory.yml` via `ansible/ansible.cfg`.
 
 ## Roles Overview
 - `base`: Common packages, Docker install, network setup, health checks
@@ -126,7 +101,7 @@ To route all lab traffic through Mullvad VPN:
 2. Place it in `ansible/roles/firewall/files/private/<endpoint>.conf`
 3. Set `features.enable_wireguard: true` in `config.yml`
 4. Re-provision the firewall VM
-5. Verify with `curl https://am.i.mullvad.net/connected` from REMnux/Windows
+5. Verify with `curl https://am.i.mullvad.net/connected` from REMnux
 
 See [docs/WireGuard-Setup.md](docs/WireGuard-Setup.md) for details.
 

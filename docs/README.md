@@ -8,7 +8,6 @@
 
 ## Lab Machines & Services
 - [Roles.md](Roles.md): Role-by-role overview
-- [Windows-Analysis-VM.md](Windows-Analysis-VM.md): Windows malware analysis workstation
 - [REMnux-Guide.md](REMnux-Guide.md): Linux malware analysis VM
 
 ## Services

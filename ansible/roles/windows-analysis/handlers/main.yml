@@ -1,7 +1,0 @@
----
-# Handlers for windows-analysis role
-
-- name: reboot windows
-  win_reboot:
-    msg: "Rebooting Windows for configuration changes"
-    pre_reboot_delay: 5

@@ -9,7 +9,6 @@ lab:
   netmask: "255.255.255.0"
   firewall_ip: "10.20.0.2"
   remnux_ip: "10.20.0.20"
-  win_analysis_ip: "10.20.0.30"
 
 host:
   network_cidr: "10.1.0.0/24"
@@ -62,7 +61,6 @@ features:
   enable_wireguard: true
   remnux_snapshot: true
   remnux_snapshot_name: "clean"
-  windows_analysis_vm: true
 
 #------------------------------------------------------------------------------
 # WireGuard/Mullvad VPN Configuration
@@ -79,8 +77,5 @@ resources:
     memory: 2048
     cpus: 2
   remnux:
-    memory: 4096
-    cpus: 2
-  windows_analysis:
     memory: 4096
     cpus: 2

@@ -83,10 +83,17 @@
         state: started
         daemon_reload: yes
 
+    - name: Wait for WireGuard interface to come up
+      pause:
+        seconds: 3
+
     - name: Verify WireGuard interface
       command: ip addr show wg0
       changed_when: false
       register: wg_status
+      retries: 3
+      delay: 2
+      until: wg_status.rc == 0
 
     - name: Display WireGuard status
       debug:
@@ -96,6 +103,14 @@
       command: ping -c 1 10.64.0.1
       changed_when: false
       failed_when: false
+      retries: 3
+      delay: 2
+
+    - name: Reload nftables to apply WireGuard egress rules
+      systemd:
+        name: nftables
+        state: restarted
+      when: wg_enabled | bool
 
   when: wg_enabled | bool
 

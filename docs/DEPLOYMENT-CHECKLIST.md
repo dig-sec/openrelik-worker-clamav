@@ -13,19 +13,17 @@ Use this checklist to verify the lab is properly configured before running `vagr
 
 ### Vagrant Setup
 - [ ] `generic/ubuntu2204` box added: `vagrant box list | grep ubuntu2204`
-- [ ] `generic/windows10` box added: `vagrant box list | grep windows10`
 - [ ] `vagrant-libvirt` plugin installed: `vagrant plugin list | grep libvirt`
 - [ ] libvirt daemon running: `systemctl status libvirtd`
 
 ### Ansible Setup
 - [ ] Collections installed: `cd ansible && ansible-galaxy collection install -r requirements.yml`
-- [ ] Verify collections: `ansible-galaxy collection list | grep -E 'community.docker|community.windows|ansible.windows'`
+- [ ] Verify collections: `ansible-galaxy collection list | grep -E 'community.docker'`
 
 ### Project Configuration
 - [ ] `config.yml` exists and is properly formatted (copy from `config.yml` if needed)
 - [ ] Network settings reasonable (default `10.20.0.0/24` is fine)
 - [ ] External hostname set (use `<IP>.sslip.io` for testing)
-- [ ] Windows VM enabled/disabled as intended: `grep windows_analysis_vm config.yml`
 
 ## Deployment Phase
 
@@ -80,34 +78,6 @@ vagrant ssh remnux
 # [ ] REMnux tools present in /opt/remnux-tools
 ```
 
-### Windows Analysis VM (Optional)
-```bash
-# Third VM - malware analysis with Sysmon, Sysinternals
-vagrant up win-analysis
-
-# Expected output:
-# - VM boots with 10.20.0.30
-# - WinRM becomes available (may take 3-5 minutes)
-# - Ansible provisions via WinRM
-# - Analyst user created
-# - Analysis tools installed
-# - Optional: snapshot 'clean' created
-```
-
-- [ ] Windows VM boots without errors
-- [ ] WinRM becomes available (watch for "Waiting for WinRM...")
-- [ ] Ansible provisioning completes (watch for green tasks)
-- [ ] Snapshot created (if enabled): `vagrant snapshot list win-analysis | grep clean`
-
-```bash
-# Verify Windows network (via RDP)
-# [ ] ipconfig shows 10.20.0.30
-# [ ] DNS server is 10.20.0.2
-# [ ] Can ping firewall
-# [ ] Sysmon service running: Get-Service Sysmon64
-# [ ] Tools in C:\tools\analysis\
-```
-
 ### Host Services
 ```bash
 # Run from host (outside vagrant)
@@ -132,7 +102,6 @@ ansible-playbook playbooks/host.yml
 # Test lab network from host
 ping 10.20.0.2   # Firewall
 ping 10.20.0.20  # REMnux
-ping 10.20.0.30  # Windows (if enabled)
 
 # All should respond
 ```
@@ -146,7 +115,6 @@ vagrant ssh remnux
 # Inside REMnux:
 nslookup utgard-remnux.utgard.local      # Self
 nslookup utgard-firewall.utgard.local    # Firewall
-nslookup utgard-win.utgard.local         # Windows (if enabled)
 ```
 
 - [ ] DNS resolves lab hostnames to correct IPs
@@ -168,11 +136,9 @@ curl -k https://$HOSTNAME/
 1. Navigate to `https://<hostname>/guacamole/`
 2. Login with displayed credentials
 3. Connect to REMnux (SSH)
-4. Connect to Windows (RDP) if enabled
 
 - [ ] Guacamole portal loads
 - [ ] REMnux SSH connection works
-- [ ] Windows RDP connection works (if enabled)
 
 ### WireGuard/Mullvad (Optional)
 ```bash
@@ -196,34 +162,10 @@ curl https://am.i.mullvad.net/connected
 # ✓ Correct
 vagrant up firewall
 vagrant up remnux
-vagrant up win-analysis
 
 # ✗ Wrong - will cause network timeouts
-vagrant up remnux win-analysis  # Firewall not running yet!
+vagrant up remnux  # Firewall not running yet!
 vagrant up firewall
-```
-
-### Windows Box Large (8+ GB Download)
-**First-time setup may take 30+ minutes** for `vagrant box add generic/windows10`
-
-### WinRM Timeout on Slow Systems
-**Windows provisioning takes 5-10 minutes just waiting for WinRM.** If you see:
-```
-Waiting for WinRM to become available...
-```
-This is **normal**. Do not interrupt. WinRM startup is slow on Windows.
-
-### Ansible Collections Must Be Installed
-**Without these, Windows provisioning will fail immediately:**
-```bash
-ansible-galaxy collection install -r ansible/requirements.yml
-```
-
-### Config.yml Feature Flags
-**Windows VM is opt-in** — it won't start unless explicitly enabled:
-```yaml
-features:
-  windows_analysis_vm: true
 ```
 
 ## Snapshot Management
@@ -232,20 +174,17 @@ features:
 ```bash
 # After everything works, save clean snapshots
 vagrant snapshot save remnux clean
-vagrant snapshot save win-analysis clean
 ```
 
 ### Restore from Snapshot
 ```bash
 # Quick reset to known-good state
 vagrant snapshot restore remnux clean
-vagrant snapshot restore win-analysis clean
 ```
 
 ### Delete Snapshots
 ```bash
 vagrant snapshot delete remnux clean
-vagrant snapshot delete win-analysis clean
 ```
 
 ## Cleanup / Full Reset
@@ -275,7 +214,7 @@ Run these periodically to verify lab health:
 vagrant status
 
 # Check network connectivity
-for ip in 10.20.0.{2,20,30}; do echo "Testing $ip:"; ping -c 1 "$ip" && echo "✓" || echo "✗"; done
+for ip in 10.20.0.{2,20}; do echo "Testing $ip:"; ping -c 1 "$ip" && echo "✓" || echo "✗"; done
 
 # Check Docker services
 docker ps --format "{{.Names}}\t{{.Status}}"
@@ -298,14 +237,11 @@ Lab is ready when:
 4. ✓ Guacamole portal accessible: `https://<hostname>/guacamole/`
 5. ✓ RDP/SSH connections work through Guacamole
 6. ✓ REMnux can run: `vagrant ssh remnux -- remnux version` (if version available)
-7. ✓ Windows tools installed: `ls C:\tools\analysis` via RDP
-8. ✓ Analysis ready: Sysmon running, capture tools available
 
 If all criteria met: **Lab is fully operational!**
 
 ## Next Steps
 
-- Review [Windows-Analysis-VM.md](Windows-Analysis-VM.md) for malware analysis workflows
 - Review [WireGuard-Setup.md](WireGuard-Setup.md) for VPN egress configuration  
 - Review [docs/README.md](../docs/README.md) for service documentation
 - Review [Troubleshooting.md](Troubleshooting.md) if issues arise
