@@ -10,6 +10,7 @@
   roles:
     - base         # Base tools + Docker
     - network      # Docker networks + network isolation
+    - elastic      # Elasticsearch + Kibana stack
     - edge         # Unified HTTPS entry point
     - openrelik    # Run OpenRelik on host via Docker
     - guacamole    # Remote access portal

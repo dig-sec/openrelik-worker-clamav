@@ -23,6 +23,10 @@ docker_networks:
     driver: bridge
     ipam_config:
       - subnet: "172.32.0.0/24"
+  elastic_default:
+    driver: bridge
+    ipam_config:
+      - subnet: "172.33.0.0/24"
 
 # Kasm Tor isolation settings
 kasm_tor_interface: eth1

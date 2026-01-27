@@ -1,0 +1,41 @@
+version: "3.8"
+services:
+  elasticsearch:
+    image: {{ elasticsearch_image }}
+    container_name: elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: "-Xms{{ elasticsearch_heap_size }} -Xmx{{ elasticsearch_heap_size }}{% if elasticsearch_extra_java_opts %} {{ elasticsearch_extra_java_opts }}{% endif %}"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - {{ elasticsearch_data_dir }}:/usr/share/elasticsearch/data
+      - {{ elasticsearch_logs_dir }}:/usr/share/elasticsearch/logs
+    ports:
+      - "127.0.0.1:{{ elasticsearch_port }}:9200"
+    networks:
+      - elastic_default
+
+  kibana:
+    image: {{ kibana_image }}
+    container_name: kibana
+    restart: unless-stopped
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    ports:
+      - "127.0.0.1:{{ kibana_port }}:5601"
+    networks:
+      - elastic_default
+
+networks:
+  elastic_default:
+    external: true

@@ -1,0 +1,15 @@
+---
+# Elasticsearch + Kibana defaults
+
+elasticsearch_state_dir: /opt/elastic
+elasticsearch_data_dir: "{{ elasticsearch_state_dir }}/data"
+elasticsearch_logs_dir: "{{ elasticsearch_state_dir }}/logs"
+elasticsearch_port: 9200
+kibana_port: 5601
+
+elasticsearch_heap_size: 1g
+elasticsearch_image: "docker.elastic.co/elasticsearch/elasticsearch:8.14.3"
+kibana_image: "docker.elastic.co/kibana/kibana:8.14.3"
+
+# Extra JVM options, appended to ES_JAVA_OPTS
+elasticsearch_extra_java_opts: ""
