@@ -4,7 +4,7 @@ Utgard is a turnkey OSINT and DFIR lab that provisions a small virtual network a
 
 - Firewall/Gateway VM with nftables + dnsmasq + optional Mullvad WireGuard egress
 - REMnux VM for malware analysis (with RDP)
-- Host services: OpenRelik (forensic pipeline), Kasm Workspaces (isolated browsers incl. Tor), Guacamole (remote desktop gateway), Maigret (username OSINT)
+- Host services: OpenRelik (forensic pipeline), Kasm Workspaces (isolated browsers incl. Tor), Guacamole (remote desktop gateway), Maigret (username OSINT). Elasticsearch/Kibana are not installed on the host.
 
 The edge role generates a TLS cert and exposes all services via a single hostname, with optional subdomain routing and HTTP Basic Auth.
 
@@ -62,6 +62,7 @@ vagrant up
 cd ansible
 ansible-playbook playbooks/host.yml
 ```
+Note: the host playbook does not install Elasticsearch or Kibana.
 
 3) Access the portal and services:
 - Portal: `https://<hostname>/` (or just the root domain if subdomains are enabled)

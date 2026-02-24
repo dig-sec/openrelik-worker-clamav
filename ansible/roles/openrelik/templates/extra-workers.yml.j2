@@ -4,7 +4,13 @@ services:
 {% for worker in workers %}
   {{ worker.service }}:
     container_name: {{ worker.service }}
+{% if worker.service in ['openrelik-worker-clamav', 'openrelik-worker-elasticsearch'] %}
+    build:
+      context: ./files/{{ worker.service }}
+    image: local/{{ worker.service }}:latest
+{% else %}
     image: {{ openrelik_worker_registry }}/{{ worker.service }}:{{ worker.tag | default(openrelik_worker_tag) }}
+{% endif %}
     restart: always
     environment:
       - REDIS_URL=redis://openrelik-redis:6379

@@ -10,8 +10,8 @@
   roles:
     - base         # Base tools + Docker
     - network      # Docker networks + network isolation
-    - elastic      # Elasticsearch + Kibana stack
-    - edge         # Unified HTTPS entry point
+    - role: edge   # Unified HTTPS entry point
+      tags: [edge]
     - openrelik    # Run OpenRelik on host via Docker
     - guacamole    # Remote access portal
     - maigret      # OSINT username search tool

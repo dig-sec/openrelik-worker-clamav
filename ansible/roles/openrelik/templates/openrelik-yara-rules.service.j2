@@ -1,0 +1,11 @@
+[Unit]
+Description=Update OpenRelik YARA rules
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/git -C {{ openrelik_yara_rules_dir }}/signature-base pull --ff-only
+{% if openrelik_yara_rules_restart_worker | default(true) %}
+ExecStartPost=-/usr/bin/docker restart openrelik-worker-yara
+{% endif %}

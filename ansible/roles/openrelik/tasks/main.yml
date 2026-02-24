@@ -2,5 +2,10 @@
 # OpenRelik provisioning - uses official install script
 
 - name: Install OpenRelik via official script
-  include_tasks: install.yml
+  import_tasks: install.yml
   tags: [openrelik, install]
+
+- name: Manage OpenRelik YARA rules
+  import_tasks: rules.yml
+  tags: [openrelik, yara]
+  when: openrelik_yara_rules_enabled | default(true)

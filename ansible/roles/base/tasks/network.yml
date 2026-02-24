@@ -11,7 +11,10 @@
     src: resolv.conf.j2
     dest: /etc/resolv.conf
     mode: '0644'
-  when: dns_resolver is defined and dns_resolver | length > 0
+  when:
+    - dns_resolver is defined
+    - dns_resolver | length > 0
+    - ansible_connection | default('') != 'local'
 
 - name: Enable IP forwarding (for firewall VM)
   sysctl:

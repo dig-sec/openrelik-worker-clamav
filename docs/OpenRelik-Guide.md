@@ -21,7 +21,7 @@ Key variables in `roles/openrelik/defaults/main.yml`:
 - `openrelik_worker_tag`: `latest`
 
 ## Workers
-Default workers:
+Default workers (see upstream repos for new components):
 - `openrelik-worker-plaso`: Timeline analysis (concurrency: 2)
 - `openrelik-worker-yara`: Malware pattern matching (concurrency: 2)
 - `openrelik-worker-hayabusa`: Event log analysis (concurrency: 4)
@@ -29,7 +29,9 @@ Default workers:
 - `openrelik-worker-strings`: String extraction (concurrency: 4)
 - `openrelik-worker-exif`: Metadata extraction (concurrency: 1)
 - `openrelik-worker-ssdeep`: Fuzzy hashing (concurrency: 1)
-- `openrelik-worker-clamav`: Malware scanning (concurrency: 2)
+- `openrelik-worker-clamav`: Malware scanning (concurrency: 2) — repo: https://github.com/dig-sec/openrelik-worker-clamav.git
+- `openrelik-worker-elasticsearch`: Data indexing (concurrency: 1) — repo: https://github.com/dig-sec/openrelik-worker-elasticsearch.git — repo: https://github.com/dig-sec/openrelik-worker-clamav.git
+- `openrelik-worker-elasticsearch`: Data indexing (concurrency: 1) — repo: https://github.com/dig-sec/openrelik-worker-elasticsearch.git
 - ... and more
 
 Adjust concurrency based on host CPU and memory. Each worker runs as a separate container.

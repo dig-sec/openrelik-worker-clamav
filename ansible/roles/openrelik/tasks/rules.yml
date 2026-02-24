@@ -1,0 +1,44 @@
+---
+# Manage OpenRelik YARA rules
+
+- name: Ensure YARA rules directory exists
+  file:
+    path: "{{ openrelik_yara_rules_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Sync YARA rules repository
+  git:
+    repo: "{{ openrelik_yara_rules_repo }}"
+    dest: "{{ openrelik_yara_rules_dir }}/signature-base"
+    version: "{{ openrelik_yara_rules_ref }}"
+    update: yes
+  when: openrelik_yara_rules_enabled | default(true)
+
+- name: Install YARA rules update service
+  template:
+    src: openrelik-yara-rules.service.j2
+    dest: /etc/systemd/system/openrelik-yara-rules.service
+    mode: '0644'
+  when: openrelik_yara_rules_update_mode in ['scheduled', 'both']
+
+- name: Install YARA rules update timer
+  template:
+    src: openrelik-yara-rules.timer.j2
+    dest: /etc/systemd/system/openrelik-yara-rules.timer
+    mode: '0644'
+  when: openrelik_yara_rules_update_mode in ['scheduled', 'both']
+
+- name: Reload systemd for YARA rules timer
+  systemd:
+    daemon_reload: true
+  when: openrelik_yara_rules_update_mode in ['scheduled', 'both']
+
+- name: Enable and start YARA rules update timer
+  systemd:
+    name: openrelik-yara-rules.timer
+    state: started
+    enabled: true
+  when: openrelik_yara_rules_update_mode in ['scheduled', 'both']

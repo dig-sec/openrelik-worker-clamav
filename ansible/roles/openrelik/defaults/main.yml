@@ -39,6 +39,8 @@ openrelik_extra_workers:
     concurrency: 1
   - service: openrelik-worker-clamav
     concurrency: 2
+  - service: openrelik-worker-elasticsearch
+    concurrency: 1
 openrelik_worker_registry: ghcr.io/openrelik
 openrelik_worker_tag: latest
 openrelik_registry_url: ghcr.io
@@ -46,3 +48,12 @@ openrelik_registry_username: ""
 openrelik_registry_password: ""
 openrelik_skip_missing_workers: false
 openrelik_offline_mode: true
+
+# YARA rules management
+openrelik_yara_rules_enabled: true
+openrelik_yara_rules_repo: "https://github.com/Neo23x0/signature-base.git"
+openrelik_yara_rules_ref: "master"
+openrelik_yara_rules_dir: "{{ openrelik_install_dir }}/openrelik/data/yara"
+openrelik_yara_rules_update_mode: "scheduled"  # ansible | scheduled | both
+openrelik_yara_rules_update_calendar: "daily"
+openrelik_yara_rules_restart_worker: true

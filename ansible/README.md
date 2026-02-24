@@ -96,7 +96,9 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `openrelik_ui_port`: UI port mapping (default: 8711)
 - `openrelik_api_port`: API port mapping (default: 8710)
 - `openrelik_workers_enabled`: Enable worker containers (default: true)
-- `openrelik_extra_workers`: Desired worker services list; the overlay compose only adds workers missing from the base OpenRelik compose (includes yara, hayabusa, capa, strings, entropy, eztools, exif, regripper, ssdeep, eml, clamav, grep, plaso, extraction, analyzer-config)
+- `openrelik_extra_workers`: Desired worker services list; the overlay compose only adds workers missing from the base OpenRelik compose (includes yara, hayabusa, capa, strings, entropy, eztools, exif, regripper, ssdeep, eml, clamav, grep, plaso, extraction, analyzer-config, elasticsearch).  New workers are maintained upstream by dig-sec:
+  * https://github.com/dig-sec/openrelik-worker-clamav.git
+  * https://github.com/dig-sec/openrelik-worker-elasticsearch.git
 - `openrelik_registry_url`: Container registry for worker images (default: `ghcr.io`)
 - `openrelik_registry_username`: Registry username for private images (optional)
 - `openrelik_registry_password`: Registry password/token (optional)

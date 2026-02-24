@@ -1,0 +1,9 @@
+[Unit]
+Description=Schedule OpenRelik YARA rules updates
+
+[Timer]
+OnCalendar={{ openrelik_yara_rules_update_calendar }}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
