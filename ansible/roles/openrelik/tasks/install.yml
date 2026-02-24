@@ -125,6 +125,19 @@
   when:
     - openrelik_compose.stat.exists
 
+- name: Split OpenRelik workers by image source
+  set_fact:
+    openrelik_local_workers_resolved: >-
+      {{ (openrelik_extra_workers_resolved | default(openrelik_extra_workers))
+         | selectattr('service', 'in', openrelik_local_build_workers | default([]))
+         | list }}
+    openrelik_registry_workers_resolved: >-
+      {{ (openrelik_extra_workers_resolved | default(openrelik_extra_workers))
+         | rejectattr('service', 'in', openrelik_local_build_workers | default([]))
+         | list }}
+  when:
+    - openrelik_compose.stat.exists
+
 - name: Login to OpenRelik registry (optional)
   command: docker login {{ openrelik_registry_url }} -u {{ openrelik_registry_username }} --password-stdin
   args:
@@ -137,14 +150,18 @@
     - openrelik_registry_password | length > 0
 
 - name: Check OpenRelik worker images
-  command: "docker manifest inspect {{ openrelik_worker_registry }}/{{ item.service }}:{{ item.tag | default(openrelik_worker_tag) }}"
+  command: >-
+    docker manifest inspect {{
+      item.image
+      | default(openrelik_worker_registry ~ '/' ~ item.service ~ ':' ~ (item.tag | default(openrelik_worker_tag)))
+    }}
   register: openrelik_worker_manifest
   changed_when: false
   failed_when: false
-  loop: "{{ openrelik_extra_workers_resolved | default(openrelik_extra_workers) }}"
+  loop: "{{ openrelik_registry_workers_resolved | default([]) }}"
   when:
     - openrelik_compose.stat.exists
-    - (openrelik_extra_workers_resolved | default(openrelik_extra_workers) | length) > 0
+    - (openrelik_registry_workers_resolved | default([]) | length) > 0
 
 - name: Collect missing OpenRelik workers
   set_fact:
@@ -171,13 +188,14 @@
 - name: Filter OpenRelik workers to available images
   set_fact:
     openrelik_extra_workers_resolved: >-
-      {{ openrelik_worker_manifest.results
-         | selectattr('rc', 'equalto', 0)
-         | map(attribute='item')
-         | list }}
+      {{ (openrelik_worker_manifest.results
+          | default([])
+          | selectattr('rc', 'equalto', 0)
+          | map(attribute='item')
+          | list)
+         + (openrelik_local_workers_resolved | default([])) }}
   when:
     - openrelik_compose.stat.exists
-    - openrelik_worker_manifest is defined
     - openrelik_skip_missing_workers | default(false)
 
 - name: Render OpenRelik extra worker compose

@@ -31,7 +31,7 @@ uv run pytest
 
 ```yaml
 openrelik-worker-clamav:
-  image: ghcr.io/openrelik/openrelik-worker-clamav:latest
+  image: ghcr.io/dig-sec/openrelik-worker-clamav:latest
   environment:
     - REDIS_URL=redis://openrelik-redis:6379
   command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-clamav"

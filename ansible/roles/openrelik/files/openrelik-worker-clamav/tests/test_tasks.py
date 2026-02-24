@@ -41,14 +41,11 @@ def test_parse_database_paths(tmp_path):
     parsed = _parse_database_paths({"database_paths": f"{custom}\n/missing/path"})
     assert str(custom) in parsed
 
-
 def test_parse_database_paths_none(tmp_path):
     default_db = tmp_path / "default-db"
     default_db.mkdir()
     parsed = _parse_database_paths({"database_paths": None})
     assert isinstance(parsed, list)
-
-
 def test_build_freshclam_config(tmp_path):
     db_dir = tmp_path / "db"
     db_dir.mkdir()

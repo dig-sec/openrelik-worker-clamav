@@ -100,9 +100,32 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
   * https://github.com/dig-sec/openrelik-worker-clamav.git
   * https://github.com/dig-sec/openrelik-worker-elasticsearch.git
 - `openrelik_registry_url`: Container registry for worker images (default: `ghcr.io`)
+- `openrelik_worker_registry`: Worker image namespace/repo prefix (default: `ghcr.io/openrelik`)
+- `openrelik_worker_tag`: Worker image tag (default: `latest`)
+- `openrelik_local_build_workers`: Optional list of worker services to build locally from `roles/openrelik/files/<service>` instead of pulling from registry (default: `[]`)
 - `openrelik_registry_username`: Registry username for private images (optional)
 - `openrelik_registry_password`: Registry password/token (optional)
 - `openrelik_skip_missing_workers`: Skip workers whose images cannot be pulled (default: false)
+
+#### Publish ClamAV + Elasticsearch worker images to GHCR
+- Workflow: `.github/workflows/openrelik-workers-ghcr.yml`
+- Trigger:
+  - Push to `main` when files under `roles/openrelik/files/openrelik-worker-clamav/` or `roles/openrelik/files/openrelik-worker-elasticsearch/` change.
+  - Manual `workflow_dispatch` with optional `image_namespace` and `image_tag`.
+- Default publish target/tag:
+  - `ghcr.io/dig-sec/openrelik-worker-clamav:latest`
+  - `ghcr.io/openrelik/openrelik-worker-elasticsearch:latest`
+
+For deployment-by-pull, keep:
+- `openrelik_worker_registry: ghcr.io/openrelik`
+- `openrelik_worker_tag: latest`
+
+For local build fallback, set:
+```yaml
+openrelik_local_build_workers:
+  - openrelik-worker-clamav
+  - openrelik-worker-elasticsearch
+```
 
 ### Guacamole
 - `guacamole_port`: HTTP port on host when TLS is disabled (default: 8081)

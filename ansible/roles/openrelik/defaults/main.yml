@@ -38,11 +38,13 @@ openrelik_extra_workers:
   - service: openrelik-worker-ssdeep
     concurrency: 1
   - service: openrelik-worker-clamav
-    concurrency: 2
+    concurrency: 4
+    image: ghcr.io/dig-sec/openrelik-worker-clamav:latest
   - service: openrelik-worker-elasticsearch
     concurrency: 1
 openrelik_worker_registry: ghcr.io/openrelik
 openrelik_worker_tag: latest
+openrelik_local_build_workers: []
 openrelik_registry_url: ghcr.io
 openrelik_registry_username: ""
 openrelik_registry_password: ""

@@ -4,12 +4,12 @@ services:
 {% for worker in workers %}
   {{ worker.service }}:
     container_name: {{ worker.service }}
-{% if worker.service in ['openrelik-worker-clamav', 'openrelik-worker-elasticsearch'] %}
+{% if worker.service in (openrelik_local_build_workers | default([])) %}
     build:
       context: ./files/{{ worker.service }}
-    image: local/{{ worker.service }}:latest
+    image: local/{{ worker.service }}:{{ worker.tag | default(openrelik_worker_tag) }}
 {% else %}
-    image: {{ openrelik_worker_registry }}/{{ worker.service }}:{{ worker.tag | default(openrelik_worker_tag) }}
+    image: {{ worker.image | default(openrelik_worker_registry ~ '/' ~ worker.service ~ ':' ~ (worker.tag | default(openrelik_worker_tag))) }}
 {% endif %}
     restart: always
     environment:

@@ -236,7 +236,7 @@ docker logs openrelik-worker-elasticsearch
 
 # Verify image availability
 docker inspect ghcr.io/openrelik/openrelik-worker-plaso:latest
-docker inspect ghcr.io/openrelik/openrelik-worker-clamav:latest
+docker inspect ghcr.io/dig-sec/openrelik-worker-clamav:latest
 docker inspect ghcr.io/openrelik/openrelik-worker-elasticsearch:latest
 
 # Check compose extra workers file
@@ -299,4 +299,3 @@ ansible-playbook playbooks/host.yml
 cd ansible
 ansible-playbook playbooks/host.yml -t maigret --extra-vars="maigret_state_dir=/opt/maigret"
 ```
-
