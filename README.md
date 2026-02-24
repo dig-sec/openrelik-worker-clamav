@@ -1,33 +1,47 @@
-# openrelik-worker-clamav
+<div align="center">
+  <img src="openclam.png" alt="OpenClam logo" width="120"/>
+  
+  # openrelik-worker-clamav
+  
+  <em>OpenRelik worker for scanning files and directories with ClamAV</em>
+</div>
 
-openrelik-worker-clamav is an OpenRelik worker that scans input files/directories with ClamAV (`clamscan`) and returns normalized findings for workflow processing.
+---
 
-## Features
+## 🚀 Features
 
-- Scans each upstream input file path with `clamscan`.
-- Refreshes signatures with `freshclam` before scanning (enabled by default).
-- Uses multiple signature locations (`database_paths` plus built-in defaults like `/var/lib/clamav`).
-- Uses `--allmatch` and `--detect-pua` by default for broader detection coverage.
-- Emits machine-readable JSON findings (`clamav_results.json`).
-- Emits full scanner output (`clamav_stdout.txt`).
+- Scan files and directories with `clamscan`
+- Refresh signatures with `freshclam` (default)
+- Multiple signature locations (`database_paths` + built-in defaults)
+- `--allmatch` and `--detect-pua` enabled by default
+- Machine-readable JSON findings (`clamav_results.json`)
+- Full scanner output (`clamav_stdout.txt`)
 
-## Task configuration
+---
 
-- `recursive` (bool, default `true`): recursively scan directories.
-- `update_signatures` (bool, default `true`): run `freshclam` before scan.
-- `database_paths` (textarea): newline/comma-separated list of additional `.cvd/.cld` files or directories.
-- `freshclam_mirror` (text): optional mirror override for freshclam.
-- `allmatch` (bool, default `true`): pass `--allmatch` to report all matching signatures.
-- `detect_pua` (bool, default `true`): pass `--detect-pua` to include PUA hits.
+## ⚙️ Task Configuration
 
-## Local development
+| Name              | Type      | Default | Description                                                      |
+|-------------------|-----------|---------|------------------------------------------------------------------|
+| recursive         | bool      | true    | Recursively scan directories                                     |
+| update_signatures | bool      | true    | Run `freshclam` before scan                                      |
+| database_paths    | textarea  |         | Newline/comma-separated list of additional `.cvd/.cld` files/dirs|
+| freshclam_mirror  | text      |         | Optional mirror override for freshclam                           |
+| allmatch          | bool      | true    | Pass `--allmatch` to report all matching signatures              |
+| detect_pua        | bool      | true    | Pass `--detect-pua` to include PUA hits                         |
+
+---
+
+## 🛠️ Local Development
 
 ```bash
 uv sync --no-dev
 uv run pytest
 ```
 
-## Docker usage example
+---
+
+## 🐳 Docker Usage Example
 
 ```yaml
 openrelik-worker-clamav:
@@ -37,7 +51,9 @@ openrelik-worker-clamav:
   command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-clamav"
 ```
 
-## Development dependencies
+---
+
+## 🧑‍💻 Development dependencies
 
 To install code style and linting tools (flake8, isort, black):
 
