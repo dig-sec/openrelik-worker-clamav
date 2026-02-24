@@ -1,7 +1,4 @@
-import sys
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.tasks import (
     TASK_METADATA,
@@ -23,9 +20,7 @@ class DummyResultFile:
 
 
 def test_parse_clamscan_output():
-    parsed = _parse_clamscan_output(
-        "/tmp/a.bin: Win.Test.EICAR_HDB-1 FOUND\n/tmp/clean.bin: OK"
-    )
+    parsed = _parse_clamscan_output("/tmp/a.bin: Win.Test.EICAR_HDB-1 FOUND\n/tmp/clean.bin: OK")
     assert parsed == [
         {
             "file_path": "/tmp/a.bin",
@@ -117,4 +112,8 @@ def test_task_metadata_contract():
     assert TASK_METADATA["display_name"] == "ClamAV scan"
     assert "task_config" in TASK_METADATA
     task_config_names = {item["name"] for item in TASK_METADATA["task_config"]}
-    assert {"recursive", "update_signatures", "database_paths"}.issubset(task_config_names)
+    assert {
+        "recursive",
+        "update_signatures",
+        "database_paths",
+    }.issubset(task_config_names)

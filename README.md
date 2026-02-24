@@ -31,8 +31,26 @@ uv run pytest
 
 ```yaml
 openrelik-worker-clamav:
-  image: ghcr.io/openrelik/openrelik-worker-clamav:latest
+  image: ghcr.io/dig-sec/openrelik-worker-clamav:latest
   environment:
     - REDIS_URL=redis://openrelik-redis:6379
   command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-clamav"
+```
+
+## Development dependencies
+
+To install code style and linting tools (flake8, isort, black):
+
+```bash
+uv pip install -r pyproject.toml --dev
+# or, if not using uv:
+pip install flake8 isort black
+```
+
+To check code style:
+
+```bash
+flake8 src tests
+isort --check src tests
+black --check src tests
 ```

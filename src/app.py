@@ -2,7 +2,6 @@ import os
 
 import redis
 from celery.app import Celery
-
 from openrelik_worker_common.debug_utils import start_debugger
 
 if os.getenv("OPENRELIK_PYDEBUG") == "1":

@@ -16,6 +16,12 @@ test = [
     "pytest>=8.3.5",
 ]
 
+dev = [
+    "flake8>=7.0.0",
+    "isort>=5.13.2",
+    "black>=24.3.0",
+]
+
 [tool.uv]
 package = false
 default-groups = ["test"]
@@ -23,3 +29,19 @@ default-groups = ["test"]
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.flake8]
+max-line-length = 100
+extend-ignore = ["E203", "W503"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+
+[tool.black]
+line-length = 100
+skip-string-normalization = false

@@ -50,7 +50,9 @@ TASK_METADATA = {
         {
             "name": "allmatch",
             "label": "Report all signature matches",
-            "description": "Enable clamscan --allmatch to return all detections instead of first match.",
+            "description": (
+                "Enable clamscan --allmatch to return all detections instead of first" " match."
+            ),
             "type": "checkbox",
             "required": True,
             "default_value": True,
@@ -84,14 +86,12 @@ def _parse_clamscan_output(output: str) -> list[dict[str, Any]]:
 
 
 def _parse_database_paths(task_config: dict[str, Any]) -> list[str]:
-<<<<<<< HEAD
-    configured = task_config.get("database_paths", "")
-=======
     configured = task_config.get("database_paths") or ""
     if not isinstance(configured, str):
         configured = str(configured)
->>>>>>> e84521a (Initial check-in of openrelik-worker-clamav project)
-    entries = [entry.strip() for entry in configured.replace(",", "\n").splitlines() if entry.strip()]
+    entries = [
+        entry.strip() for entry in configured.replace(",", "\n").splitlines() if entry.strip()
+    ]
     defaults = ["/var/lib/clamav", "/usr/local/share/clamav"]
 
     existing_paths: list[str] = []
@@ -118,7 +118,9 @@ def _build_freshclam_config(database_paths: list[str], mirror: str | None) -> st
     if not config_lines:
         return None
 
-    with tempfile.NamedTemporaryFile(mode="w", suffix=".conf", delete=False, encoding="utf-8") as fh:
+    with tempfile.NamedTemporaryFile(
+        mode="w", suffix=".conf", delete=False, encoding="utf-8"
+    ) as fh:
         fh.write("\n".join(config_lines) + "\n")
         return fh.name
 
@@ -132,9 +134,8 @@ def _update_signatures(database_paths: list[str], freshclam_mirror: str | None) 
     try:
         process = subprocess.run(command, capture_output=True, text=True, check=False)
         if process.returncode != 0:
-            raise RuntimeError(
-                f"freshclam failed with code {process.returncode}: {process.stderr.strip() or process.stdout.strip()}"
-            )
+            err_output = process.stderr.strip() or process.stdout.strip()
+            raise RuntimeError(f"freshclam failed with code {process.returncode}: {err_output}")
         return " ".join(shlex.quote(part) for part in command)
     finally:
         if config_file:
@@ -191,8 +192,9 @@ def command(
 
         process = subprocess.run(scan_command, capture_output=True, text=True, check=False)
         if process.returncode > 1:
+            err_output = process.stderr.strip() or process.stdout.strip()
             raise RuntimeError(
-                f"clamscan failed for {scan_path} with code {process.returncode}: {process.stderr.strip() or process.stdout.strip()}"
+                f"clamscan failed for {scan_path} with code {process.returncode}: {err_output}"
             )
 
         raw_lines.extend(line for line in process.stdout.splitlines() if line)
@@ -201,7 +203,9 @@ def command(
     if not scanned_paths:
         raise ValueError("No valid input paths were found to scan")
 
-    raw_output = create_output_file(output_path, display_name="clamav_stdout.txt", data_type="text/plain")
+    raw_output = create_output_file(
+        output_path, display_name="clamav_stdout.txt", data_type="text/plain"
+    )
     with open(raw_output.path, "w", encoding="utf-8") as fh:
         if raw_lines:
             fh.write("\n".join(raw_lines) + "\n")
