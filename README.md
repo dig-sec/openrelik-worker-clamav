@@ -1,10 +1,6 @@
-<div align="center">
-  <img src="openclam.png" alt="OpenClam logo" width="180"/>
-  
-  # openrelik-worker-clamav
-  
-  <strong>OpenRelik worker for scanning files and directories with ClamAV</strong>
-</div>
+# openrelik-worker-clamav
+
+OpenRelik worker for scanning files and directories with ClamAV.
 
 ---
 
@@ -21,14 +17,14 @@
 
 ## Task Configuration
 
-| Name              | Type      | Default | Description                                                      |
-|-------------------|-----------|---------|------------------------------------------------------------------|
-| recursive         | bool      | true    | Recursively scan directories                                     |
-| update_signatures | bool      | true    | Run `freshclam` before scan                                      |
-| database_paths    | textarea  |         | Newline/comma-separated list of additional `.cvd/.cld` files/dirs|
-| freshclam_mirror  | text      |         | Optional mirror override for freshclam                           |
-| allmatch          | bool      | true    | Pass `--allmatch` to report all matching signatures              |
-| detect_pua        | bool      | true    | Pass `--detect-pua` to include PUA hits                         |
+| Name              | Type     | Default | Description                                                        |
+|-------------------|----------|---------|--------------------------------------------------------------------|
+| `recursive`       | bool     | true    | Recursively scan directories                                       |
+| `update_signatures` | bool   | true    | Run `freshclam` before scan                                        |
+| `database_paths`  | textarea |         | Newline/comma-separated list of additional `.cvd`/`.cld` files/dirs|
+| `freshclam_mirror`| text     |         | Optional mirror override for freshclam                             |
+| `allmatch`        | bool     | true    | Pass `--allmatch` to report all matching signatures                |
+| `detect_pua`      | bool     | true    | Pass `--detect-pua` to include PUA hits                            |
 
 ---
 
@@ -48,25 +44,6 @@ openrelik-worker-clamav:
   image: ghcr.io/dig-sec/openrelik-worker-clamav:latest
   environment:
     - REDIS_URL=redis://openrelik-redis:6379
-  command: "celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-clamav"
-```
-
----
-
-## Development dependencies
-
-To install code style and linting tools (flake8, isort, black):
-
-```bash
-uv pip install -r pyproject.toml --dev
-# or, if not using uv:
-pip install flake8 isort black
-```
-
-To check code style:
-
-```bash
-flake8 src tests
-isort --check src tests
-black --check src tests
+  command: >
+    celery --app=src.app worker --task-events --concurrency=4 --loglevel=INFO -Q openrelik-worker-clamav
 ```
