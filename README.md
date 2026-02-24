@@ -1,14 +1,14 @@
 <div align="center">
-  <img src="openclam.png" alt="OpenClam logo" width="120"/>
+  <img src="openclam.png" alt="OpenClam logo" width="180"/>
   
   # openrelik-worker-clamav
   
-  <em>OpenRelik worker for scanning files and directories with ClamAV</em>
+  <strong>OpenRelik worker for scanning files and directories with ClamAV</strong>
 </div>
 
 ---
 
-## 🚀 Features
+## Features
 
 - Scan files and directories with `clamscan`
 - Refresh signatures with `freshclam` (default)
@@ -19,7 +19,7 @@
 
 ---
 
-## ⚙️ Task Configuration
+## Task Configuration
 
 | Name              | Type      | Default | Description                                                      |
 |-------------------|-----------|---------|------------------------------------------------------------------|
@@ -32,7 +32,7 @@
 
 ---
 
-## 🛠️ Local Development
+## Local Development
 
 ```bash
 uv sync --no-dev
@@ -41,7 +41,7 @@ uv run pytest
 
 ---
 
-## 🐳 Docker Usage Example
+## Docker Usage Example
 
 ```yaml
 openrelik-worker-clamav:
@@ -53,7 +53,7 @@ openrelik-worker-clamav:
 
 ---
 
-## 🧑‍💻 Development dependencies
+## Development dependencies
 
 To install code style and linting tools (flake8, isort, black):
 
