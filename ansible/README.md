@@ -96,9 +96,8 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `openrelik_ui_port`: UI port mapping (default: 8711)
 - `openrelik_api_port`: API port mapping (default: 8710)
 - `openrelik_workers_enabled`: Enable worker containers (default: true)
-- `openrelik_extra_workers`: Desired worker services list; the overlay compose only adds workers missing from the base OpenRelik compose (includes yara, hayabusa, capa, strings, entropy, eztools, exif, regripper, ssdeep, eml, clamav, grep, plaso, extraction, analyzer-config, elasticsearch).  New workers are maintained upstream by dig-sec:
+- `openrelik_extra_workers`: Desired worker services list; the overlay compose only adds workers missing from the base OpenRelik compose (includes yara, hayabusa, capa, strings, entropy, eztools, exif, regripper, ssdeep, eml, clamav, grep, plaso, extraction, analyzer-config). New workers are maintained upstream by dig-sec:
   * https://github.com/dig-sec/openrelik-worker-clamav.git
-  * https://github.com/dig-sec/openrelik-worker-elasticsearch.git
 - `openrelik_registry_url`: Container registry for worker images (default: `ghcr.io`)
 - `openrelik_worker_registry`: Worker image namespace/repo prefix (default: `ghcr.io/openrelik`)
 - `openrelik_worker_tag`: Worker image tag (default: `latest`)
@@ -107,25 +106,10 @@ ansible-playbook -i inventory.yml playbooks/host.yml -l localhost
 - `openrelik_registry_password`: Registry password/token (optional)
 - `openrelik_skip_missing_workers`: Skip workers whose images cannot be pulled (default: false)
 
-#### Publish ClamAV + Elasticsearch worker images to GHCR
-- Workflow: `.github/workflows/openrelik-workers-ghcr.yml`
-- Trigger:
-  - Push to `main` when files under `roles/openrelik/files/openrelik-worker-clamav/` or `roles/openrelik/files/openrelik-worker-elasticsearch/` change.
-  - Manual `workflow_dispatch` with optional `image_namespace` and `image_tag`.
-- Default publish target/tag:
-  - `ghcr.io/dig-sec/openrelik-worker-clamav:latest`
-  - `ghcr.io/openrelik/openrelik-worker-elasticsearch:latest`
-
 For deployment-by-pull, keep:
 - `openrelik_worker_registry: ghcr.io/openrelik`
 - `openrelik_worker_tag: latest`
-
-For local build fallback, set:
-```yaml
-openrelik_local_build_workers:
-  - openrelik-worker-clamav
-  - openrelik-worker-elasticsearch
-```
+- `openrelik_extra_workers` override for ClamAV image: `ghcr.io/dig-sec/openrelik-worker-clamav:latest`
 
 ### Guacamole
 - `guacamole_port`: HTTP port on host when TLS is disabled (default: 8081)

@@ -40,8 +40,6 @@ openrelik_extra_workers:
   - service: openrelik-worker-clamav
     concurrency: 4
     image: ghcr.io/dig-sec/openrelik-worker-clamav:latest
-  - service: openrelik-worker-elasticsearch
-    concurrency: 1
 openrelik_worker_registry: ghcr.io/openrelik
 openrelik_worker_tag: latest
 openrelik_local_build_workers: []

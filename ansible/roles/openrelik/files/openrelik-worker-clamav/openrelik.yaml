@@ -1,9 +1,0 @@
-publish: true
-
-display_name: openrelik-worker-clamav
-description: OpenRelik worker for malware scanning files and directories with ClamAV signatures.
-
-tools:
-  - display_name: ClamAV
-    description: Open-source antivirus engine for scanning files.
-    url: https://www.clamav.net/

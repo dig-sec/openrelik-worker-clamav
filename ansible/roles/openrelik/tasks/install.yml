@@ -150,11 +150,15 @@
     - openrelik_registry_password | length > 0
 
 - name: Check OpenRelik worker images
-  command: >-
-    docker manifest inspect {{
+  shell: >-
+    docker image inspect {{
       item.image
       | default(openrelik_worker_registry ~ '/' ~ item.service ~ ':' ~ (item.tag | default(openrelik_worker_tag)))
-    }}
+    }} >/dev/null 2>&1
+    || docker manifest inspect {{
+      item.image
+      | default(openrelik_worker_registry ~ '/' ~ item.service ~ ':' ~ (item.tag | default(openrelik_worker_tag)))
+    }} >/dev/null
   register: openrelik_worker_manifest
   changed_when: false
   failed_when: false

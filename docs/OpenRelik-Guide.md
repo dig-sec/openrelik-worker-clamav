@@ -30,8 +30,6 @@ Default workers (see upstream repos for new components):
 - `openrelik-worker-exif`: Metadata extraction (concurrency: 1)
 - `openrelik-worker-ssdeep`: Fuzzy hashing (concurrency: 1)
 - `openrelik-worker-clamav`: Malware scanning (concurrency: 2) — repo: https://github.com/dig-sec/openrelik-worker-clamav.git
-- `openrelik-worker-elasticsearch`: Data indexing (concurrency: 1) — repo: https://github.com/dig-sec/openrelik-worker-elasticsearch.git — repo: https://github.com/dig-sec/openrelik-worker-clamav.git
-- `openrelik-worker-elasticsearch`: Data indexing (concurrency: 1) — repo: https://github.com/dig-sec/openrelik-worker-elasticsearch.git
 - ... and more
 
 Adjust concurrency based on host CPU and memory. Each worker runs as a separate container.
@@ -60,4 +58,3 @@ docker compose restart -f /opt/openrelik/openrelik/docker-compose.yml
 - **Workers not starting**: Check `openrelik_skip_missing_workers: true` in playbook or provide valid image credentials
 - **Port conflicts**: Ensure `8710` and `8711` are free on host
 - **Out of memory**: Lower worker concurrency or increase host RAM
-

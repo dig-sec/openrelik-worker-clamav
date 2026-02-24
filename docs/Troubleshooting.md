@@ -229,15 +229,13 @@ ip route show
 ### OpenRelik workers not starting
 ```bash
 # Check logs
-# the container name matches the worker service, e.g. plaso, clamav, elasticsearch
+# the container name matches the worker service, e.g. plaso, clamav
 docker logs openrelik-worker-plaso
 docker logs openrelik-worker-clamav
-docker logs openrelik-worker-elasticsearch
 
 # Verify image availability
 docker inspect ghcr.io/openrelik/openrelik-worker-plaso:latest
 docker inspect ghcr.io/dig-sec/openrelik-worker-clamav:latest
-docker inspect ghcr.io/openrelik/openrelik-worker-elasticsearch:latest
 
 # Check compose extra workers file
 cat /opt/openrelik/openrelik/docker-compose.extra-workers.yml
