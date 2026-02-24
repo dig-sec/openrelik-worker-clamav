@@ -1,0 +1,1 @@
+"""OpenRelik ClamAV worker package."""
